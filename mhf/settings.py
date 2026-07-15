@@ -85,10 +85,27 @@ if DEBUG:
             'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
+# else:
+#     DATABASES = {
+#         'default': dj_database_url.config(default=os.getenv("DATABASE_URL"))
+#     }
+
+    
 else:
     DATABASES = {
-        'default': dj_database_url.config(default=os.getenv("DATABASE_URL"))
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('DATABASE_NAME'),
+        'USER': os.getenv('DATABASE_USER'),
+        'PASSWORD': os.getenv('DATABASE_PASSWORD'),
+        'HOST': os.getenv('DATABASE_HOST'),
+        'PORT': '5432',
     }
+}
+
+
+
+
 
 
 # Password validation

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+        .header {
+            background-color: #e74c3c;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 5px 5px 0 0;
+        }
+        .content {
+            background-color: white;
+            padding: 20px;
+        }
+        .footer {
+            background-color: #f0f0f0;
+            padding: 15px;
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            border-radius: 0 0 5px 5px;
+        }
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            margin: 15px 0;
+            background-color: #e74c3c;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+        .details {
+            background-color: #fef5f5;
+            padding: 15px;
+            border-left: 4px solid #e74c3c;
+            margin: 15px 0;
+        }
+        .reason {
+            background-color: #fff5f5;
+            padding: 15px;
+            border: 1px solid #f0d6d6;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Facility Application Status Update</h1>
+        </div>
+        
+        <div class="content">
+            <p>Dear {{ organization.contact_person }},</p>
+            
+            <p>Thank you for submitting your facility registration. We have reviewed your submission for <strong>{{ facility.name }}</strong> and unfortunately, we are unable to approve it at this time.</p>
+            
+            <div class="details">
+                <h3>Facility Details:</h3>
+                <p><strong>Facility Name:</strong> {{ facility.name }}</p>
+                <p><strong>Organization:</strong> {{ organization.org_name }}</p>
+                <p><strong>County:</strong> {{ facility.county }}</p>
+                <p><strong>Status:</strong> <span style="color: #e74c3c; font-weight: bold;">Rejected</span></p>
+            </div>
+            
+            {% if rejection_reason %}
+            <div class="reason">
+                <h3 style="margin-top: 0;">Reason for Rejection:</h3>
+                <p>{{ rejection_reason }}</p>
+            </div>
+            {% endif %}
+            
+            <p><strong>Next Steps:</strong></p>
+            <ul>
+                <li>Please carefully review the rejection reason provided above</li>
+                <li>Make the necessary corrections to your facility information</li>
+                <li>You may resubmit your facility application once you've addressed the issues</li>
+            </ul>
+
+            <p>Best regards,<br>
+            <strong>The Platform Team</strong></p>
+        </div>
+        
+        <div class="footer">
+            <p>&copy; 2024 All Rights Reserved</p>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,824 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MH Platform</title>
+    <link rel="icon" href="{% static 'images/logo.jpeg' %}" type="image/png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: 'rgb(34,139,34)',
+                        secondary: 'rgb(70,130,180)',
+                    },
+                    fontFamily: { sans: ['Geist', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Geist', sans-serif;
+        }
+
+        /* Auth / Dashboard visibility */
+        #auth-page {
+            display: flex;
+        }
+
+        #dashboard-page {
+            display: none;
+        }
+
+        /* Tabs */
+        .tab.active {
+            background: white;
+            color: rgb(34,139,34);
+            font-weight: 600;
+        }
+
+        .tab:not(.active):hover {
+            background: rgba(255, 255, 255, .18);
+            color: white;
+        }
+
+        /* Pages inside dashboard */
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        /* Auth tabs */
+        .auth-tab {
+            transition: all .2s;
+        }
+
+        .auth-tab.active {
+            background: rgb(34,139,34);
+            color: white;
+        }
+
+        .auth-tab:not(.active) {
+            color: rgb(107, 114, 128);
+        }
+
+        /* Cards */
+        .stat-card {
+            transition: transform .2s, box-shadow .2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 28px rgba(188, 36, 75, .1);
+        }
+
+        .org-card {
+            transition: transform .2s, box-shadow .2s;
+        }
+
+        .org-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 16px 36px rgba(0, 0, 0, .1);
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgb(124, 156, 180);
+            border-radius: 4px;
+        }
+
+        /* Animations */
+        @keyframes ping-soft {
+
+            0%,
+            100% {
+                opacity: 1
+            }
+
+            50% {
+                opacity: .5
+            }
+        }
+
+        .badge-pulse {
+            animation: ping-soft 2s ease-in-out infinite;
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0)
+            }
+        }
+
+        .fu {
+            animation: fadeUp .35s ease forwards;
+            opacity: 0;
+        }
+
+        .d1 {
+            animation-delay: .05s;
+        }
+
+        .d2 {
+            animation-delay: .12s;
+        }
+
+        .d3 {
+            animation-delay: .18s;
+        }
+
+        /* Modal */
+        #facility-modal,
+        #confirm-modal {
+            transition: opacity .2s;
+        }
+
+        /* Steps */
+        .step-panel {
+            display: none;
+        }
+
+        .step-panel.active {
+            display: block;
+        }
+
+        .step-dot {
+            transition: all .2s;
+        }
+
+        .step-dot.done {
+            background: rgb(34,139,34);
+            border-color: rgb(34,139,34);
+            color: white;
+        }
+
+        .step-dot.current {
+            border-color: rgb(34,139,34);
+            color: rgb(34,139,34 );
+        }
+
+        .step-dot.upcoming {
+            border-color: #d1d5db;
+            color: #9ca3af;
+        }
+
+        /* Filter pills */
+        .fp {
+            transition: all .13s;
+        }
+
+        .fp.on {
+            background: rgb(124, 156, 180);
+            color: white;
+            border-color: rgb(124, 156, 180);
+        }
+
+        /* Inputs */
+        .field {
+            width: 100%;
+            border: 1px solid #e5e7eb;
+            border-radius: .75rem;
+            padding: .625rem .875rem;
+            font-size: .8125rem;
+            color: #111;
+            outline: none;
+            transition: border-color .15s;
+            font-family: 'Geist', sans-serif;
+        }
+
+        .field:focus {
+            border-color: rgb(124, 156, 180);
+        }
+
+        .field-label {
+            display: block;
+            font-size: .6875rem;
+            font-weight: 600;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            margin-bottom: .375rem;
+        }
+
+        /* Report bars */
+        .rbar {
+            transition: width 1s cubic-bezier(.4, 0, .2, 1);
+        }
+
+        /* Tbl rows */
+        .tbl-row {
+            transition: background .12s;
+            cursor: pointer;
+        }
+
+        .tbl-row:hover {
+            background: #f8fafc;
+        }
+
+        /* Auth background dots */
+        .dot-grid {
+            background-image: radial-gradient(circle, rgba(124, 156, 180, .25) 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+
+        /* Settings sub-tabs */
+        .stab-panel {
+            display: none;
+        }
+
+        .stab-panel.active {
+            display: block;
+        }
+
+        .stab.active {
+            background: rgb(34,139,34);
+            color: white;
+        }
+
+        /* ── Ad ticker ── */
+        @keyframes ticker {
+            0% {
+                transform: translateX(0);
+            }
+
+            100% {
+                transform: translateX(-50%);
+            }
+        }
+
+        .ad-track {
+            animation: ticker 38s linear infinite;
+            will-change: transform;
+            display: flex;
+        }
+
+        .ad-track:hover {
+            animation-play-state: paused;
+        }
+
+        /* Password checklist */
+        .chk-pass .chk-icon {
+            background: rgb(16, 185, 129) !important;
+            border-color: rgb(16, 185, 129) !important;
+        }
+
+        .chk-pass .chk-icon::after {
+            content: '✓';
+            font-size: 8px;
+            color: white;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+        }
+
+        .chk-pass {
+            color: #065f46 !important;
+        }
+
+        /* Submit button states */
+        #reg-submit-btn.enabled {
+            background: rgb(34,139,34) !important;
+            cursor: pointer !important;
+            opacity: 1 !important;
+            box-shadow: 0 2px 12px rgba(34,139,34, .35) !important;
+        }
+
+        #reg-submit-btn.enabled:hover {
+            background: rgb(34,139,34) !important;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 h-screen overflow-hidden">
+
+
+    <!-- ══════════════════════════════════════════════════════
+     AUTH PAGE
+══════════════════════════════════════════════════════ -->
+    <div id="auth-page" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-50 dot-grid">
+
+        <!-- Decorative left panel -->
+        <div class="hidden lg:flex flex-col justify-between w-[420px] h-full bg-secondary p-12 flex-shrink-0">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-primary flex items-center justify-center flex-shrink-0">
+                    <div class="w-12 h-9 rounded-xl bg-primary flex items-center justify-center flex-shrink-0 shadow-lg">
+                        <img src="{% static 'images/logo.jpeg' %}" alt="Logo" class="w-10 h-10 rounded-xl flex-shrink-0" />
+                    </div>
+                </div>
+                <div>
+                    <p class="text-white font-semibold text-[14px] leading-none">Lake Region OPDs</p>
+                    <p class="text-white/60 text-[11px] mt-0.5">Stakeholder Network</p>
+                </div>
+            </div>
+            <div>
+                <h2 class="text-white text-[32px] font-bold leading-tight mb-4">Lake Region OPDs</h2>
+                <p class="text-white/70 text-[14px] leading-relaxed">A unified platform connecting mental health
+                    organizations, NGOs, CBOs and networks across Kenya. Register your facility to appear on the
+                    public-facing dashboard.</p>
+                <div class="mt-8 grid grid-cols-2 gap-4">
+                    <div class="bg-white/10 rounded-2xl p-4">
+                        <p class="text-white text-[28px] font-bold">{{ organizations|default:"0" }}</p>
+                        <p class="text-white/60 text-[12px] mt-0.5">Number of Organizations</p>
+                    </div>
+                    <div class="bg-white/10 rounded-2xl p-4">
+                        <p class="text-white text-[28px] font-bold">1</p>
+                        <p class="text-white/60 text-[12px] mt-0.5">Counties Covered</p>
+                    </div>
+                </div>
+            </div>
+            <p class="text-white/40 text-[11px]">© 2026 IDL Kenya · Lake Region OPDs Platform</p>
+        </div>
+
+        <!-- Form panel -->
+        <div class="flex-1 flex flex-col h-full overflow-hidden">
+
+            <!-- Sticky top: logo + tabs — never scrolls away -->
+            <div class="flex-shrink-0 px-6 pt-6 pb-0 w-full max-w-md lg:max-w-xl mx-auto">
+                <!-- Logo (mobile only) -->
+                <div class="flex items-center gap-3 mb-5 lg:hidden">
+                    <div class="w-9 h-9 rounded-xl bg-primary flex items-center justify-center">
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
+                            <path
+                                d="M12 21.593c-5.63-5.539-11-10.297-11-14.402C1 3.335 3.39 1 6.526 1c2.144 0 3.964 1.049 5.474 3.053C13.51 2.049 15.33 1 17.474 1 20.61 1 23 3.335 23 7.191c0 4.105-5.37 8.863-11 14.402z"
+                                fill="white" />
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="font-semibold text-gray-900 text-[13.5px]">MH Platform</p>
+                        <p class="text-gray-400 text-[10.5px]">Stakeholder Network</p>
+                    </div>
+                </div>
+                <!-- Auth toggle tabs — always visible -->
+                <div class="flex bg-gray-100 rounded-2xl p-1 mb-5">
+                    <button class="auth-tab active flex-1 py-2.5 rounded-xl text-[13.5px] font-semibold transition-all"
+                        onclick="showAuthTab('login')">Login</button>
+                    <button class="auth-tab flex-1 py-2.5 rounded-xl text-[13.5px] font-semibold transition-all"
+                        onclick="showAuthTab('register')">Register</button>
+                </div>
+            </div>
+
+            <!-- Scrollable form body -->
+            <div class="flex-1 overflow-y-auto px-6 pb-6">
+                <div class="w-full max-w-md lg:max-w-xl mx-auto">
+
+                    <!-- ── LOGIN ── -->
+                    <div id="auth-login" class="space-y-4">
+                        <div>
+                            <h1 class="text-[22px] font-bold text-gray-900">Welcome back</h1>
+                            <p class="text-[13px] text-gray-400 mt-0.5">Sign in to manage your facilities</p>
+                        </div>
+                        {% if login_form and login_form.non_field_errors %}
+                        <div class="rounded-xl border border-red-200 bg-red-50 text-red-700 px-3 py-2 text-[12px]">
+                            {{ login_form.non_field_errors.0 }}
+                        </div>
+                        {% endif %}
+                        <form method="post" action="{% url 'login' %}" class="space-y-4" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <div>
+                                <label class="field-label">Email Address</label>
+                                <input type="email" name="email" placeholder="you@organization.org" class="field"
+                                    value="{{ login_data.email|default:'' }}" required>
+                                {% if login_form and login_form.email.errors %}
+                                <p class="text-[11px] text-red-500 mt-1">{{ login_form.email.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <label class="field-label">Password</label>
+                                <input type="password" name="password" placeholder="••••••••" class="field" required>
+                                {% if login_form and login_form.password.errors %}
+                                <p class="text-[11px] text-red-500 mt-1">{{ login_form.password.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+                            <div class="flex items-center justify-between text-[12.5px]">
+                                <label class="flex items-center gap-2 cursor-pointer text-gray-500">
+                                    <input type="checkbox" name="remember_me"
+                                        class="w-3.5 h-3.5 accent-primary rounded"> Remember me
+                                </label>
+                                <a href="#" class="text-secondary font-semibold hover:underline">Forgot password?</a>
+                            </div>
+                            <button type="submit"
+                                class="w-full bg-primary hover:bg-secondary text-white font-semibold py-3 rounded-xl transition-colors text-[14px] shadow-[0_2px_12px_rgba(188,36,75,.35)]">
+                                Sign In
+                            </button>
+                        </form>
+                        <p class="text-center text-[12.5px] text-gray-400">Don't have an account? <a href="#"
+                                onclick="showAuthTab('register')"
+                                class="text-primary font-semibold hover:underline">Register your organization</a></p>
+
+                        <p class="text-center text-[12.5px] text-gray-400">Go back to <a href="/"
+                                class="text-primary font-semibold hover:underline">Dashboard</a></p>
+                    </div>
+
+                    <!-- ── REGISTER ── -->
+                    <div id="auth-register" class="hidden space-y-4">
+                        <div>
+                            <h1 class="text-[22px] font-bold text-gray-900">Register your organization</h1>
+                            <p class="text-[13px] text-gray-400 mt-0.5">Your account will be reviewed by the IDL team
+                                before approval.</p>
+                        </div>
+
+                        {% if registration_form and registration_form.non_field_errors %}
+                        <div class="rounded-xl border border-red-200 bg-red-50 text-red-700 px-3 py-2 text-[12px]">
+                            {{ registration_form.non_field_errors.0 }}
+                        </div>
+                        {% endif %}
+                        <form method="post" action="{% url 'register' %}" enctype="multipart/form-data" class="space-y-4">
+                            {% csrf_token %}
+                            <div class="grid grid-cols-2 lg:grid-cols-3 gap-3">
+                                <div class="col-span-2 lg:col-span-3">
+                                    <label class="field-label">Name of Organization <span
+                                            class="text-primary">*</span></label>
+                                    <input type="text" name="org_name" placeholder="Full legal name" class="field"
+                                        value="{{ registration_form.org_name.value|default:'' }}" required>
+                                    {% if registration_form and registration_form.org_name.errors %}
+                                    <p class="text-[11px] text-red-500 mt-1">{{ registration_form.org_name.errors.0 }}
+                                    </p>
+                                    {% endif %}
+                                </div>
+                                <div class="col-span-2 lg:col-span-3">
+                                    <label class="field-label">Email Address <span class="text-primary">*</span></label>
+                                    <input type="email" name="email" placeholder="official@org.org" class="field"
+                                        value="{{ registration_form.email.value|default:'' }}" required>
+                                    {% if registration_form and registration_form.email.errors %}
+                                    <p class="text-[11px] text-red-500 mt-1">{{ registration_form.email.errors.0 }}</p>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <label class="field-label">Confirm Email <span class="text-primary">*</span></label>
+                                    <input type="email" name="confirm_email" placeholder="Re-enter email" class="field"
+                                        value="{{ registration_form.confirm_email.value|default:'' }}" required>
+                                    {% if registration_form and registration_form.confirm_email.errors %}
+                                    <p class="text-[11px] text-red-500 mt-1">{{ registration_form.confirm_email.errors.0 }}</p>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <label class="field-label">Contact Person <span
+                                            class="text-primary">*</span></label>
+                                    <input type="text" name="contact_person" placeholder="Full name" class="field"
+                                        value="{{ registration_form.contact_person.value|default:'' }}" required>
+                                    {% if registration_form and registration_form.contact_person.errors %}
+                                    <p class="text-[11px] text-red-500 mt-1">{{
+                                        registration_form.contact_person.errors.0 }}</p>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <label class="field-label">Correspondence Number <span
+                                            class="text-primary">*</span></label>
+                                    <input type="tel" name="correspondence_phone" placeholder="+254 7XX XXX XXX"
+                                        class="field"
+                                        value="{{ registration_form.correspondence_phone.value|default:'' }}" required>
+                                    {% if registration_form and registration_form.correspondence_phone.errors %}
+                                    <p class="text-[11px] text-red-500 mt-1">{{ registration_form.correspondence_phone.errors.0 }}</p>
+                                    {% endif %}
+                                </div>
+                                <div class="col-span-2 lg:col-span-2">
+                                    <label class="field-label">Correspondence Email <span
+                                            class="text-primary">*</span></label>
+                                    <input type="email" name="correspondence_email" placeholder="contact@org.org"
+                                        class="field"
+                                        value="{{ registration_form.correspondence_email.value|default:'' }}" required>
+                                    {% if registration_form and registration_form.correspondence_email.errors %}
+                                    <p class="text-[11px] text-red-500 mt-1">
+                                        {{ registration_form.correspondence_email.errors.0 }}</p>
+                                    {% endif %}
+                                </div>
+                                <div class="col-span-2 lg:col-span-1">
+                                    <label class="field-label">
+                                        Organization Logo <span class="text-primary">*</span>
+                                    </label>
+                                
+                                    <input type="file" name="logo" class="field" required>
+                                
+                                    {% if registration_form and registration_form.logo.errors %}
+                                    <p class="text-[11px] text-red-500 mt-1">
+                                        {{ registration_form.logo.errors.0 }}
+                                    </p>
+                                    {% endif %}
+                                </div>
+                                <div class="col-span-2 lg:col-span-3">
+                                    <label class="field-label">How did you hear about us? <span
+                                            class="text-primary">*</span></label>
+                                    <select class="field" id="hear-select" name="hear_about_us"
+                                        onchange="toggleHearOther()" required>
+                                        <option value="" disabled {% if not registration_form.hear_about_us.value %}selected{% endif %}>Select an option</option>
+                                        <option value="internet" {% if registration_form.hear_about_us.value == 'internet'%}selected{% endif %}>Internet Search</option>
+                                        <option value="social" {% if registration_form.hear_about_us.value == 'social' %}selected{% endif %}>Social Media</option>
+                                        <option value="direct" {% if registration_form.hear_about_us.value == 'direct' %}selected{% endif %}>Direct Mail or Physical Advertisement</option>
+                                        <option value="referral" {% if registration_form.hear_about_us.value == 'referral' %}selected{% endif %}>Referral</option>
+                                        <option value="news" {% if registration_form.hear_about_us.value == 'news' %}selected{% endif %}>News Article</option>
+                                        <option value="event" {% if registration_form.hear_about_us.value == 'event' %}selected{% endif %}>Event or Conference</option>
+                                        <option value="opds" {% if registration_form.hear_about_us.value == 'opds' %}selected{% endif %}>
+                                            Our organization is already part of OPDs
+                                        </option>
+                                        
+                                        <option value="forum" {% if registration_form.hear_about_us.value == 'forum' %}selected{% endif %}>
+                                            I heard about the platform during a forum
+                                        </option>
+                                        <option value="other" {% if registration_form.hear_about_us.value == 'other' %}selected{% endif %}>Other (specify)</option>
+                                    </select>
+                                    {% if registration_form and registration_form.hear_about_us.errors %}
+                                    <p class="text-[11px] text-red-500 mt-1">{{ registration_form.hear_about_us.errors.0 }}</p>
+                                    {% endif %}
+                                    <div id="hear-other-wrap" class="hidden mt-2">
+                                        <input id="hear-other-input" name="hear_about_us_other" type="text"
+                                            placeholder="Please specify how you heard about us…" class="field"
+                                            value="{{ registration_form.hear_about_us_other.value|default:'' }}">
+                                        {% if registration_form and registration_form.hear_about_us_other.errors %}
+                                        <p class="text-[11px] text-red-500 mt-1">{{ registration_form.hear_about_us_other.errors.0 }}</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <!-- Password -->
+                                <div class="col-span-2 lg:col-span-2">
+                                    <label class="field-label">Password <span class="text-primary">*</span></label>
+                                    <div class="relative">
+                                        <input id="reg-password" name="password" type="password" placeholder="••••••••"
+                                            class="field pr-10" oninput="checkPasswordStrength()">
+                                        <button type="button" onclick="togglePw('reg-password','eye-reg')"
+                                            class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
+                                            <svg id="eye-reg" class="w-4 h-4" fill="none" stroke="currentColor"
+                                                stroke-width="2" viewBox="0 0 24 24">
+                                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                                <circle cx="12" cy="12" r="3" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Confirm Password -->
+                                <div class="col-span-2 lg:col-span-1">
+                                    <label class="field-label">Confirm Password <span
+                                            class="text-primary">*</span></label>
+                                    <div class="relative">
+                                        <input id="reg-confirm" name="confirm_password" type="password"
+                                            placeholder="••••••••" class="field pr-10"
+                                            oninput="checkPasswordStrength()">
+                                        <button type="button" onclick="togglePw('reg-confirm','eye-confirm')"
+                                            class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
+                                            <svg id="eye-confirm" class="w-4 h-4" fill="none" stroke="currentColor"
+                                                stroke-width="2" viewBox="0 0 24 24">
+                                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                                <circle cx="12" cy="12" r="3" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <!-- Match feedback -->
+                                    <p id="pw-match-msg" class="text-[11px] mt-1.5 hidden"></p>
+                                    {% if registration_form and registration_form.confirm_password.errors %}
+                                    <p class="text-[11px] text-red-500 mt-1">{{
+                                        registration_form.confirm_password.errors.0 }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- ── Password Strength Meter ── -->
+                            <div id="pw-strength-wrap"
+                                class="col-span-2 lg:col-span-3 rounded-2xl border border-gray-100 bg-gray-50 p-4 space-y-3">
+                                <div class="flex items-center justify-between">
+                                    <p class="text-[11.5px] font-semibold text-gray-600">Password strength</p>
+                                    <span id="pw-strength-label" class="text-[11.5px] font-bold text-gray-300">—</span>
+                                </div>
+
+                                <!-- Segmented bar -->
+                                <div class="flex gap-1.5">
+                                    <div id="bar-1"
+                                        class="h-1.5 flex-1 rounded-full bg-gray-200 transition-all duration-300"></div>
+                                    <div id="bar-2"
+                                        class="h-1.5 flex-1 rounded-full bg-gray-200 transition-all duration-300"></div>
+                                    <div id="bar-3"
+                                        class="h-1.5 flex-1 rounded-full bg-gray-200 transition-all duration-300"></div>
+                                    <div id="bar-4"
+                                        class="h-1.5 flex-1 rounded-full bg-gray-200 transition-all duration-300"></div>
+                                </div>
+
+                                <!-- Checklist -->
+                                <ul class="grid grid-cols-2 gap-x-4 gap-y-1.5">
+                                    <li id="chk-length" class="flex items-center gap-2 text-[11.5px] text-gray-400">
+                                        <span
+                                            class="chk-icon w-4 h-4 rounded-full border border-gray-300 flex items-center justify-center flex-shrink-0"></span>At
+                                        least 8 characters
+                                    </li>
+                                    <li id="chk-upper" class="flex items-center gap-2 text-[11.5px] text-gray-400"><span
+                                            class="chk-icon w-4 h-4 rounded-full border border-gray-300 flex items-center justify-center flex-shrink-0"></span>Uppercase
+                                        letter</li>
+                                    <li id="chk-lower" class="flex items-center gap-2 text-[11.5px] text-gray-400"><span
+                                            class="chk-icon w-4 h-4 rounded-full border border-gray-300 flex items-center justify-center flex-shrink-0"></span>Lowercase
+                                        letter</li>
+                                    <li id="chk-number" class="flex items-center gap-2 text-[11.5px] text-gray-400">
+                                        <span
+                                            class="chk-icon w-4 h-4 rounded-full border border-gray-300 flex items-center justify-center flex-shrink-0"></span>Number
+                                    </li>
+                                    <li id="chk-special" class="flex items-center gap-2 text-[11.5px] text-gray-400">
+                                        <span
+                                            class="chk-icon w-4 h-4 rounded-full border border-gray-300 flex items-center justify-center flex-shrink-0"></span>Special
+                                        character
+                                    </li>
+                                    <li id="chk-match" class="flex items-center gap-2 text-[11.5px] text-gray-400"><span
+                                            class="chk-icon w-4 h-4 rounded-full border border-gray-300 flex items-center justify-center flex-shrink-0"></span>Passwords
+                                        match</li>
+                                </ul>
+                            </div>
+
+                            <div
+                                class="bg-secondary/10 border border-secondary/20 rounded-xl px-4 py-3 text-[12px] text-gray-500">
+                                <p class="font-semibold text-gray-700 mb-1">What happens next?</p>
+                                The IDL team will carry out due diligence and notify you via email whether your
+                                registration
+                                is <span class="text-emerald-600 font-medium">approved</span> or <span
+                                    class="text-primary font-medium">rejected with reasons</span>. Once approved, you'll
+                                be
+                                asked to complete your facility profile.
+                            </div>
+
+                            <button id="reg-submit-btn" type="submit" disabled
+                                class="w-full text-white font-semibold py-3 rounded-xl transition-all text-[14px] bg-gray-300 cursor-not-allowed opacity-60"
+                                style="box-shadow:none">
+                                Submit Registration
+                            </button>
+                            <p class="text-center text-[12.5px] text-gray-400">Already registered? <a href="#"
+                                    onclick="showAuthTab('login')"
+                                    class="text-primary font-semibold hover:underline">Sign
+                                    in</a></p>
+
+                            <p class="text-center text-[12.5px] text-gray-400">Go back to <a href="/"
+                                        class="text-primary font-semibold hover:underline">Dashboard</a></p>
+                        </form>
+                    </div><!-- /auth-register -->
+
+                </div><!-- /max-w-md -->
+            </div><!-- /scrollable form body -->
+        </div><!-- /form panel -->
+    </div><!-- /auth-page -->
+
+
+    <!-- ══════════════════════════════════════════════════════
+     DASHBOARD PAGE
+══════════════════════════════════════════════════════ -->
+
+
+    <!-- ══════════════════════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════════════════════ -->
+    <script>
+
+        function showAuthTab(tab) {
+            document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.auth-tab').forEach((t, i) => {
+                if ((tab === 'login' && i === 0) || (tab === 'register' && i === 1)) t.classList.add('active');
+            });
+            document.getElementById('auth-login').classList.toggle('hidden', tab !== 'login');
+            document.getElementById('auth-register').classList.toggle('hidden', tab !== 'register');
+        }
+
+        function toggleHearOther() {
+            const sel = document.getElementById('hear-select');
+            const wrap = document.getElementById('hear-other-wrap');
+            const input = document.getElementById('hear-other-input');
+            const isOther = (sel.value || '').toLowerCase() === 'other';
+            wrap.classList.toggle('hidden', !isOther);
+            if (isOther) {
+                wrap.style.opacity = '0';
+                wrap.style.transform = 'translateY(-4px)';
+                wrap.style.transition = 'opacity .2s, transform .2s';
+                requestAnimationFrame(() => {
+                    wrap.style.opacity = '1';
+                    wrap.style.transform = 'translateY(0)';
+                    input.focus();
+                });
+            }
+        }
+
+        const rules = [
+            { id: 'chk-length', test: pw => pw.length >= 8 },
+            { id: 'chk-upper', test: pw => /[A-Z]/.test(pw) },
+            { id: 'chk-lower', test: pw => /[a-z]/.test(pw) },
+            { id: 'chk-number', test: pw => /[0-9]/.test(pw) },
+            { id: 'chk-special', test: pw => /[^A-Za-z0-9]/.test(pw) },
+        ];
+
+        const strengthLevels = [
+            { label: 'Too weak', color: '#ef4444', bars: 1 },
+            { label: 'Weak', color: '#f97316', bars: 2 },
+            { label: 'Fair', color: '#eab308', bars: 3 },
+            { label: 'Strong', color: '#22c55e', bars: 4 },
+        ];
+
+        function checkPasswordStrength() {
+            const pw = document.getElementById('reg-password').value;
+            const cpw = document.getElementById('reg-confirm').value;
+
+            let passed = 0;
+            rules.forEach(r => {
+                const el = document.getElementById(r.id);
+                const ok = r.test(pw);
+                if (ok) { el.classList.add('chk-pass'); passed++; }
+                else { el.classList.remove('chk-pass'); }
+            });
+
+            const matchEl = document.getElementById('chk-match');
+            const matchMsg = document.getElementById('pw-match-msg');
+            const matches = pw.length > 0 && pw === cpw;
+
+            if (matches) {
+                matchEl.classList.add('chk-pass');
+                matchMsg.textContent = '✓ Passwords match';
+                matchMsg.className = 'text-[11px] mt-1.5 text-emerald-600 font-medium';
+            } else {
+                matchEl.classList.remove('chk-pass');
+                if (cpw.length > 0) {
+                    matchMsg.textContent = '✗ Passwords do not match';
+                    matchMsg.className = 'text-[11px] mt-1.5 text-red-500 font-medium';
+                } else {
+                    matchMsg.textContent = '';
+                    matchMsg.className = 'text-[11px] mt-1.5 hidden';
+                }
+            }
+
+            const label = document.getElementById('pw-strength-label');
+            const bars = [1, 2, 3, 4].map(i => document.getElementById('bar-' + i));
+
+            if (pw.length === 0) {
+                label.textContent = '—';
+                label.style.color = '#d1d5db';
+                bars.forEach(b => { b.style.background = '#e5e7eb'; });
+            } else {
+                const score = Math.min(4, Math.max(1, passed));
+                const lvl = strengthLevels[score - 1];
+                label.textContent = lvl.label;
+                label.style.color = lvl.color;
+                bars.forEach((b, i) => {
+                    b.style.background = i < lvl.bars ? lvl.color : '#e5e7eb';
+                });
+            }
+
+            const submitBtn = document.getElementById('reg-submit-btn');
+            const allGood = passed === rules.length && matches;
+            submitBtn.disabled = !allGood;
+            submitBtn.classList.toggle('enabled', allGood);
+        }
+
+        function togglePw(inputId, eyeId) {
+            const input = document.getElementById(inputId);
+            const eye = document.getElementById(eyeId);
+            const isHidden = input.type === 'password';
+            input.type = isHidden ? 'text' : 'password';
+            eye.innerHTML = isHidden
+                ? `<path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>`
+                : `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`;
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            showAuthTab('{{ active_tab|default:"login" }}');
+            toggleHearOther();
+        });
+
+    </script>
+
+    {% for message in messages %}
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            const text = "{{ message|escapejs }}";
+            if (!text) return;
+            const toast = document.createElement('div');
+            toast.className = 'fixed bottom-6 right-6 z-[70] flex items-center gap-3 bg-gray-900 text-white px-5 py-4 rounded-2xl shadow-2xl text-[13.5px] font-medium';
+            toast.style.animation = 'fadeUp .3s ease forwards';
+            toast.innerHTML = `<svg class="w-5 h-5 text-emerald-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg> ${text}`;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 5000);
+        });
+    </script>
+    {% endfor %}
+
+</body>
+
+</html>

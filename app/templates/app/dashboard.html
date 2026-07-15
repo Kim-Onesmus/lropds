@@ -1,0 +1,2201 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MH Platform</title>
+    <link rel="icon" href="{% static 'images/logo.jpeg' %}" type="image/png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: 'rgb(34,139,34)',
+                        secondary: 'rgb(70,130,180)',
+                    },
+                    fontFamily: { sans: ['Geist', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Geist', sans-serif;
+        }
+
+        /* Auth / Dashboard visibility */
+        #auth-page {
+            display: flex;
+        }
+
+        #dashboard-page {
+            display: flex;
+        }
+
+        /* Tabs */
+        .tab.active {
+            background: white;
+            color: rgb(34,139,34);
+            font-weight: 600;
+        }
+
+        .tab:not(.active):hover {
+            background: rgba(255, 255, 255, .18);
+            color: white;
+        }
+
+        /* Pages inside dashboard */
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        /* Auth tabs */
+        .auth-tab {
+            transition: all .2s;
+        }
+
+        .auth-tab.active {
+            background: rgb(34,139,34);
+            color: white;
+        }
+
+        .auth-tab:not(.active) {
+            color: rgb(107, 114, 128);
+        }
+
+        /* Cards */
+        .stat-card {
+            transition: transform .2s, box-shadow .2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 28px rgba(188, 36, 75, .1);
+        }
+
+        .org-card {
+            transition: transform .2s, box-shadow .2s;
+        }
+
+        .org-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 16px 36px rgba(0, 0, 0, .1);
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgb(124, 156, 180);
+            border-radius: 4px;
+        }
+
+        /* Animations */
+        @keyframes ping-soft {
+
+            0%,
+            100% {
+                opacity: 1
+            }
+
+            50% {
+                opacity: .5
+            }
+        }
+
+        .badge-pulse {
+            animation: ping-soft 2s ease-in-out infinite;
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0)
+            }
+        }
+
+        .fu {
+            animation: fadeUp .35s ease forwards;
+            opacity: 0;
+        }
+
+        .d1 {
+            animation-delay: .05s;
+        }
+
+        .d2 {
+            animation-delay: .12s;
+        }
+
+        .d3 {
+            animation-delay: .18s;
+        }
+
+        /* Modal */
+        #facility-modal,
+        #confirm-modal {
+            transition: opacity .2s;
+        }
+
+        /* Steps */
+        .step-panel {
+            display: none;
+        }
+
+        .step-panel.active {
+            display: block;
+        }
+
+        .step-dot {
+            transition: all .2s;
+        }
+
+        .step-dot.done {
+            background: rgb(34,139,34);
+            border-color: rgb(34,139,34);
+            color: white;
+        }
+
+        .step-dot.current {
+            border-color: rgb(34,139,34);
+            color: rgb(34,139,34);
+        }
+
+        .step-dot.upcoming {
+            border-color: #d1d5db;
+            color: #9ca3af;
+        }
+
+        /* Filter pills */
+        .fp {
+            transition: all .13s;
+        }
+
+        .fp.on {
+            background: rgb(124, 156, 180);
+            color: white;
+            border-color: rgb(124, 156, 180);
+        }
+
+        /* Inputs */
+        .field {
+            width: 100%;
+            border: 1px solid #e5e7eb;
+            border-radius: .75rem;
+            padding: .625rem .875rem;
+            font-size: .8125rem;
+            color: #111;
+            outline: none;
+            transition: border-color .15s;
+            font-family: 'Geist', sans-serif;
+        }
+
+        .field:focus {
+            border-color: rgb(124, 156, 180);
+        }
+
+        .field-label {
+            display: block;
+            font-size: .6875rem;
+            font-weight: 600;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            margin-bottom: .375rem;
+        }
+
+        /* Report bars */
+        .rbar {
+            transition: width 1s cubic-bezier(.4, 0, .2, 1);
+        }
+
+        /* Tbl rows */
+        .tbl-row {
+            transition: background .12s;
+            cursor: pointer;
+        }
+
+        .tbl-row:hover {
+            background: #f8fafc;
+        }
+
+        /* Auth background dots */
+        .dot-grid {
+            background-image: radial-gradient(circle, rgba(124, 156, 180, .25) 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+
+        /* Settings sub-tabs */
+        .stab-panel {
+            display: none;
+        }
+
+        .stab-panel.active {
+            display: block;
+        }
+
+        .stab.active {
+            background: rgb(34,139,34);
+            color: white;
+        }
+
+        /* ── Ad ticker ── */
+        @keyframes ticker {
+            0% {
+                transform: translateX(0);
+            }
+
+            100% {
+                transform: translateX(-50%);
+            }
+        }
+
+        .ad-track {
+            animation: ticker 38s linear infinite;
+            will-change: transform;
+            display: flex;
+        }
+
+        .ad-track:hover {
+            animation-play-state: paused;
+        }
+
+        /* Password checklist */
+        .chk-pass .chk-icon {
+            background: rgb(16, 185, 129) !important;
+            border-color: rgb(16, 185, 129) !important;
+        }
+
+        .chk-pass .chk-icon::after {
+            content: '✓';
+            font-size: 8px;
+            color: white;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+        }
+
+        .chk-pass {
+            color: #065f46 !important;
+        }
+
+        /* Submit button states */
+        #reg-submit-btn.enabled {
+            background: rgb(34,139,34) !important;
+            cursor: pointer !important;
+            opacity: 1 !important;
+            box-shadow: 0 2px 12px rgba(188, 36, 75, .35) !important;
+        }
+
+        #reg-submit-btn.enabled:hover {
+            background: rgb(34,139,34) !important;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 h-screen overflow-hidden" data-open-add-facility="{{ open_add_facility|yesno:'1,0' }}"
+    data-org-status="{{ request.user.status }}">
+    <form id="logout-form" method="post" action="{% url 'logout' %}" class="hidden">
+        {% csrf_token %}
+    </form>
+
+
+    <!-- ══════════════════════════════════════════════════════
+     AUTH PAGE
+══════════════════════════════════════════════════════ -->
+    <div id="dashboard-page" class="flex h-screen overflow-hidden">
+
+        <!-- SIDEBAR OVERLAY (mobile) -->
+        <div id="sidebar-overlay" onclick="toggleSidebar()"
+            class="fixed inset-0 bg-black/40 backdrop-blur-sm z-30 hidden md:hidden"></div>
+
+        <!-- ── SIDEBAR ── -->
+        <aside id="sidebar"
+            class="fixed md:static z-40 top-0 left-0 h-full w-64 flex flex-col bg-secondary shadow-2xl transform -translate-x-full md:translate-x-0 transition-transform duration-300">
+            <div class="flex items-center gap-3 px-5 h-16 border-b border-white/20 flex-shrink-0">
+                <div class="w-12 h-9 rounded-xl bg-primary flex items-center justify-center flex-shrink-0 shadow-lg">
+                    <img src="{% static 'images/logo.jpeg' %}" alt="Logo" class="w-10 h-10 rounded-xl flex-shrink-0" />
+                </div>
+                <div>
+                    <p class="text-white font-semibold text-[13.5px] leading-none">Lake Region OPDs</p>
+                    <!-- <p class="text-white/55 text-[10.5px] mt-0.5 leading-none">Stakeholder Network</p> -->
+                </div>
+            </div>
+            <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+                <p class="text-[9.5px] font-semibold text-white/40 uppercase tracking-[.12em] px-3 pb-2">Menu</p>
+                <a href="#" data-tab="dashboard"
+                    class="tab active flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] transition-colors"><svg
+                        class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M3 3h6v6H3V3zm0 8h6v6H3v-6zm8-8h6v6h-6V3zm0 8h6v6h-6v-6z" />
+                    </svg>Dashboard</a>
+                <a href="#" data-tab="organizations"
+                    class="tab flex items-center gap-3 px-3 py-2.5 rounded-xl text-white text-[13px] transition-colors"><svg
+                        class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path
+                            d="M4 3a1 1 0 000 2h12a1 1 0 100-2H4zm-1 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm1 4a1 1 0 000 2h8a1 1 0 100-2H4z" />
+                    </svg><span class="flex-1">Organizations</span><span
+                        class="text-[10px] font-semibold bg-white/20 text-white px-2 py-0.5 rounded-full">{{ organizations_count }}</span></a>
+                <a href="#" data-tab="map"
+                    class="tab flex items-center gap-3 px-3 py-2.5 rounded-xl text-white text-[13px] transition-colors"><svg
+                        class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path
+                            d="M10 2a6 6 0 00-6 6c0 4.2 6 10 6 10s6-5.8 6-10a6 6 0 00-6-6zm0 8a2 2 0 110-4 2 2 0 010 4z" />
+                    </svg>Interactive Map</a>
+                <a href="#" data-tab="reports"
+                    class="tab flex items-center gap-3 px-3 py-2.5 rounded-xl text-white text-[13px] transition-colors"><svg
+                        class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path
+                            d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zm6-4a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zm6-3a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
+                    </svg>Resources</a>
+                <a href="#" data-tab="settings"
+                    class="tab flex items-center gap-3 px-3 py-2.5 rounded-xl text-white text-[13px] transition-colors"><svg
+                        class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd"
+                            d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z"
+                            clip-rule="evenodd" />
+                    </svg>Settings</a>
+            </nav>
+            <div class="px-3 pb-4 pt-3 border-t border-white/20 flex-shrink-0">
+                <div
+                    class="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 transition-colors cursor-pointer">
+                    {% if request.user.is_authenticated %}
+                    <div
+                        class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-[11px] font-bold flex-shrink-0">
+                        {{ request.user.org_name|default:"U"|slice:":1"|upper }}</div>
+                    <div class="min-w-0 flex-1">
+                        <p class="text-white text-[12.5px] font-semibold leading-none truncate">
+                            {{ request.user.org_name }}</p>
+                        <p class="text-white/50 text-[10.5px] mt-0.5">{{ request.user.get_status_display }}</p>
+                    </div>
+                    <button onclick="doLogout()" title="Logout"
+                        class="text-white/30 hover:text-white/70 transition-colors ml-auto">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd"
+                                d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z"
+                                clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                    {% else %}
+                    <div
+                        class="w-24 h-8 rounded-full bg-primary flex items-center justify-center text-white text-[11px] font-bold flex-shrink-0">
+                        <a href="{% url 'login' %}">Login/Register</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </aside>
+
+        <!-- ── MAIN ── -->
+        <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+
+            <!-- NAVBAR -->
+            <header
+                class="h-16 bg-white border-b border-gray-100 px-4 md:px-6 flex items-center justify-between flex-shrink-0 shadow-sm">
+                <div class="flex items-center gap-3">
+                    <button onclick="toggleSidebar()"
+                        class="md:hidden w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 text-gray-500 transition-colors">
+                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" viewBox="0 0 24 24">
+                            <path d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                    <div class="hidden md:block">
+                        <h1 id="page-title" class="text-[15px] font-semibold text-gray-900 leading-none">Dashboard</h1>
+                        <p id="page-crumb" class="text-[11px] text-gray-400 mt-0.5">Overview &amp; summary</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2.5">
+                    <!-- ADD A FACILITY action -->
+                    {% if request.user.is_authenticated %}
+                    <button onclick="openFacilityModal()"
+                        class="flex items-center gap-2 bg-primary hover:bg-secondary text-white text-[12.5px] font-semibold px-4 py-2 rounded-xl transition-colors shadow-[0_2px_12px_rgba(188,36,75,.35)]">
+                        <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd"
+                                d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                                clip-rule="evenodd" />
+                        </svg>
+                        <span class="hidden sm:inline">Add a Facility/Branch</span>
+                    </button>
+                    {% else %}
+                    <a href="{% url 'login' %}"
+                        class="flex items-center gap-2 bg-primary hover:bg-secondary text-white text-[12.5px] font-semibold px-4 py-2 rounded-xl transition-colors shadow-[0_2px_12px_rgba(188,36,75,.35)]">
+                        <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd"
+                                d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                                clip-rule="evenodd" />
+                        </svg>
+                        <span class="hidden sm:inline">Add a Facility/Branch</span>
+                    </a>
+                    {% endif %}
+                    <div class="relative">
+                        {% if request.user.is_authenticated %}
+                        <button onclick="toggleDropdown()"
+                            class="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-xl hover:bg-gray-100 transition-colors">
+                            <div
+                                class="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-white text-[10px] font-bold">
+                                {{ request.user.org_name|default:"U"|slice:":1"|upper }}</div>
+                            <span class="hidden sm:block text-[13px] font-medium text-gray-700">
+                                {{ request.user.org_name }}</span>
+                            <svg class="w-3 h-3 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd"
+                                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                    clip-rule="evenodd" />
+                            </svg>
+                        </button>
+                        <div id="dropdown"
+                            class="hidden absolute right-0 mt-2 w-44 bg-white border border-gray-100 shadow-xl rounded-2xl overflow-hidden z-50">
+                            <div class="px-4 py-3 border-b border-gray-50">
+                                <p class="text-[12.5px] font-semibold text-gray-900">{{ request.user.org_name }}</p>
+                                <p class="text-[11px] text-gray-400">{{ request.user.email }}</p>
+                            </div>
+                            <a href="#" onclick="switchTab('settings')"
+                                class="flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-gray-600 hover:bg-gray-50 transition-colors"><svg
+                                    class="w-3.5 h-3.5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
+                                        clip-rule="evenodd" />
+                                </svg>Profile</a>
+                            <a href="#" onclick="doLogout()"
+                                class="flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-primary hover:bg-red-50 transition-colors"><svg
+                                    class="w-3.5 h-3.5 text-primary" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd"
+                                        d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z"
+                                        clip-rule="evenodd" />
+                                </svg>Logout</a>
+                        </div>
+                        {% else %}
+                        <div class="px-4 py-3 border-b border-gray-50">
+                            <p class="text-[12.5px] bg-primary font-semibold text-white px-2 py-2 rounded-xl w-max">
+                                <a href="{% url 'login' %}">Login/Register</a>
+                            </p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </header>
+
+            <!-- CONTENT -->
+            <div class="flex-1 overflow-y-auto bg-gray-50">
+
+                <!-- ── DASHBOARD ── -->
+                <div id="page-dashboard" class="page active p-4 md:p-6 space-y-6">
+                    <!-- <div class="fu d1 flex items-center gap-3 bg-secondary/10 border border-secondary/25 rounded-2xl px-5 py-3.5">
+                    <div class="w-7 h-7 rounded-full bg-secondary/20 flex items-center justify-center flex-shrink-0"><svg class="w-3.5 h-3.5 text-secondary" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg></div>
+                    <p class="text-[13px] text-gray-600 flex-1"><strong class="font-semibold text-gray-900">22 applications</strong> pending IDL review — please action to keep the pipeline moving.</p>
+                    <a href="#" onclick="switchTab('organizations')" class="text-secondary font-semibold text-[12.5px] hover:underline whitespace-nowrap">Review →</a>
+                </div> -->
+                    <div class="fu d1 grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div
+                            class="stat-card bg-white rounded-2xl p-5 border border-gray-100 shadow-sm relative overflow-hidden">
+                            <div class="absolute top-0 inset-x-0 h-[3px] bg-primary rounded-t-2xl"></div>
+                            <div class="flex items-start justify-between mb-3">
+                                <p class="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Facilities</p>
+                                <span class="w-8 h-8 rounded-xl bg-primary/[.07] flex items-center justify-center"><svg
+                                        class="w-4 h-4 text-primary" fill="currentColor" viewBox="0 0 20 20">
+                                        <path
+                                            d="M4 3a1 1 0 000 2h12a1 1 0 100-2H4zm-1 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm1 4a1 1 0 000 2h8a1 1 0 100-2H4z" />
+                                    </svg></span>
+                            </div>
+                            <p class="text-[38px] font-bold text-primary leading-none"
+                                style="font-variant-numeric:tabular-nums">{{ total|default:0 }}</p>
+                            <p class="text-[11.5px] text-gray-400 mt-2">All registered facilities/branches</p>
+                        </div>
+                        <div
+                            class="stat-card bg-white rounded-2xl p-5 border border-gray-100 shadow-sm relative overflow-hidden">
+                            <div class="absolute top-0 inset-x-0 h-[3px] bg-emerald-500 rounded-t-2xl"></div>
+                            <div class="flex items-start justify-between mb-3">
+                                <p class="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">MH funding</p>
+                                <span class="w-8 h-8 rounded-xl bg-emerald-50 flex items-center justify-center"><svg
+                                        class="w-4 h-4 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd"
+                                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                            clip-rule="evenodd" />
+                                    </svg></span>
+                            </div>
+                            <p class="text-[38px] font-bold text-gray-900 leading-none"
+                                style="font-variant-numeric:tabular-nums">{{ total_mh_funding|default:0 }}</p>
+                            <p class="text-[11.5px] text-gray-400 mt-2">Total MH funding</p>
+                        </div>
+                        <div
+                            class="stat-card bg-white rounded-2xl p-5 border border-gray-100 shadow-sm relative overflow-hidden">
+                            <div class="absolute top-0 inset-x-0 h-[3px] bg-amber-400 rounded-t-2xl"></div>
+                            <div class="flex items-start justify-between mb-3">
+                                <p class="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Persons Reached</p>
+                                <span class="w-8 h-8 rounded-xl bg-amber-50 flex items-center justify-center"><svg
+                                        class="w-4 h-4 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd"
+                                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
+                                            clip-rule="evenodd" />
+                                    </svg></span>
+                            </div>
+                            <p class="text-[38px] font-bold text-gray-900 leading-none"
+                                style="font-variant-numeric:tabular-nums">{{ total_reached|default:0 }}</p>
+                            <p class="text-[11.5px] text-gray-400 mt-2">Number of Persons reached</p>
+                        </div>
+                        <div
+                            class="stat-card bg-white rounded-2xl p-5 border border-gray-100 shadow-sm relative overflow-hidden">
+                            <div class="absolute top-0 inset-x-0 h-[3px] bg-primary rounded-t-2xl"></div>
+                            <div class="flex items-start justify-between mb-3">
+                                <p class="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Organizations</p>
+                                <span class="w-8 h-8 rounded-xl bg-primary/[.07] flex items-center justify-center"><svg
+                                        class="w-4 h-4 text-primary" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd"
+                                            d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                                            clip-rule="evenodd" />
+                                    </svg></span>
+                            </div>
+                            <p class="text-[38px] font-bold text-gray-900 leading-none"
+                                style="font-variant-numeric:tabular-nums">{{ organizations_count|default:0 }}</p>
+                            <p class="text-[11.5px] text-gray-400 mt-2">All registered organizations</p>
+                        </div>
+                    </div>
+
+                    <!-- Project Note -->
+                    <div class="fu d2 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                    
+                        <div class="px-5 py-4 border-b border-gray-100">
+                            <h2 class="text-[15px] font-bold text-gray-900">About This Project</h2>
+                            <p class="text-[12px] text-gray-400 mt-0.5">Mental Health Facility Mapping Initiative</p>
+                        </div>
+                    
+                        <div class="px-5 py-5 text-[13px] text-gray-600 leading-relaxed space-y-3">
+                    
+                            <p>
+                                This platform is designed to map, document, and connect mental health organizations
+                                and facilities across the region. It helps improve visibility, collaboration, and
+                                access to mental health services.
+                            </p>
+                    
+                            <p>
+                                Organizations can submit their facilities for review. Once approved, they become
+                                publicly visible and accessible to partners, stakeholders, and communities seeking
+                                mental health support services.
+                            </p>
+                    
+                            <div class="flex items-start gap-2 bg-gray-50 border border-gray-100 rounded-xl p-3 mt-2">
+                                <svg class="w-4 h-4 text-primary mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd"
+                                        d="M18 10A8 8 0 112 10a8 8 0 0116 0zm-9-4a1 1 0 012 0v4a1 1 0 11-2 0V6zm1 8a1.5 1.5 0 100-3 1.5 1.5 0 000 3z"
+                                        clip-rule="evenodd" />
+                                </svg>
+                    
+                                <p class="text-[12.5px] text-gray-600">
+                                    All facility submissions undergo review by the IDL team before approval
+                                    to ensure accuracy and quality of information.
+                                </p>
+                            </div>
+                    
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── ORGANIZATIONS ── -->
+                <div id="page-organizations" class="page p-4 md:p-6 space-y-5">
+                
+                    <div class="fu d1 flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                            <h2 class="text-[16px] font-bold text-gray-900">Organizations</h2>
+                            <p class="text-[12px] text-gray-400 mt-0.5">Registered mental health organizations</p>
+                        </div>
+                        <div class="relative w-full sm:w-72">
+                        
+                            <input type="text" id="orgSearch" placeholder="Search organizations..."
+                                class="w-full pl-10 pr-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-secondary">
+                        
+                            <!-- Search Icon -->
+                            <svg class="absolute left-3 top-2.5 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                        
+                        </div>
+                    </div>
+                
+                    <!-- Organization Cards -->
+                    <div class="fu d2 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5">
+                    
+                        {% for org in organizations %}
+                        <div class="org-card bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden"
+                            data-name="{{ org.org_name|lower }}">
+                    
+                            <!-- Logo Full Width -->
+                            <div class="w-full h-32 bg-gray-50 flex items-center justify-center overflow-hidden">
+                                {% if org.logo %}
+                                <img src="{{ org.logo.url }}"
+                                    class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+                                {% else %}
+                                <div class="text-gray-400 text-sm">
+                                    No Logo
+                                </div>
+                                {% endif %}
+                            </div>
+                    
+                            <!-- Content -->
+                            <div class="p-4 text-center">
+                    
+                                <h4 class="text-[13px] font-semibold text-gray-800 line-clamp-2 min-h-[35px]">
+                                    {{ org.org_name }}
+                                </h4>
+                    
+                                <button onclick="openOrgModal(
+                                    '{{ org.org_name }}',
+                                    '{{ org.contact_person }}',
+                                    '{{ org.correspondence_phone }}',
+                                    '{{ org.correspondence_email }}',
+                                    '{% if org.logo %}{{ org.logo.url }}{% endif %}'
+                                )"
+                                    class="mt-3 w-full text-[12px] px-3 py-2 rounded-xl bg-secondary text-white hover:opacity-90 transition">
+                    
+                                    View Organization
+                    
+                                </button>
+                    
+                            </div>
+                    
+                        </div>
+                        {% endfor %}
+                    
+                    </div>
+                
+                </div>
+
+                <!-- Organization Modal -->
+                <div id="orgModal" class="fixed inset-0 z-[70] hidden items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+
+                    <div id="orgModalCard"
+                        class="bg-white w-full max-w-xl rounded-3xl shadow-2xl overflow-hidden transform transition-all scale-95 opacity-0">
+
+                        <!-- Header / Logo -->
+                        <div class="relative bg-gradient-to-r from-gray-50 to-gray-100 h-44">
+
+                            <img id="modalLogo" class="absolute inset-0 w-full h-full object-cover opacity-90">
+
+                            <!-- Overlay -->
+                            <div class="absolute inset-0 bg-black/20"></div>
+
+                            <!-- Organization Name -->
+                            <div class="absolute bottom-4 left-6 right-6">
+                                <h3 id="modalName" class="text-xl font-bold text-white leading-tight drop-shadow">
+                                </h3>
+                            </div>
+
+                        </div>
+
+                        <!-- Content -->
+                        <div class="p-6">
+
+                            <!-- Info Grid -->
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 text-sm">
+
+                                <!-- Contact -->
+                                <div class="bg-gray-50 rounded-2xl p-4">
+                                    <p class="text-xs text-gray-400 mb-1">
+                                        Contact Person
+                                    </p>
+                                    <p id="modalContact" class="font-semibold text-gray-800">
+                                    </p>
+                                </div>
+
+                                <!-- Phone -->
+                                <div class="bg-gray-50 rounded-2xl p-4">
+                                    <p class="text-xs text-gray-400 mb-1">
+                                        Phone Number
+                                    </p>
+                                    <p id="modalPhone" class="font-semibold text-gray-800">
+                                    </p>
+                                </div>
+
+                                <!-- Email -->
+                                <div class="bg-gray-50 rounded-2xl p-4 sm:col-span-2">
+                                    <p class="text-xs text-gray-400 mb-1">
+                                        Email Address
+                                    </p>
+                                    <p id="modalEmail" class="font-semibold text-gray-800">
+                                    </p>
+                                </div>
+
+                            </div>
+
+                            <!-- Footer -->
+                            <div class="mt-6 flex justify-end">
+
+                                <button onclick="closeOrgModal()"
+                                    class="px-4 py-2 text-sm rounded-xl border border-gray-200 hover:bg-gray-50">
+                                    Close
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                
+                <!-- ── MAP ── -->
+                <div id="page-map" class="page p-4 md:p-6 space-y-4" style="height:calc(100vh - 64px)">
+                    <!-- <div class="fu d1 flex flex-wrap items-center justify-between gap-3">
+                        <div class="fu d2 bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+                        
+                            <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+                        
+                                <select id="filter-type" class="field text-[13px]">
+                                    <option value="">Organization Type</option>
+                                </select>
+                        
+                                <select id="filter-youth" class="field text-[13px]">
+                                    <option value="">Youth Org</option>
+                                </select>
+                        
+                                <select id="filter-disability" class="field text-[13px]">
+                                    <option value="">Disability Org</option>
+                                </select>
+                        
+                                <select id="filter-female" class="field text-[13px]">
+                                    <option value="">Female Led</option>
+                                </select>
+                        
+                                <button onclick="resetMapFilters()"
+                                    class="text-[12px] bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-lg font-medium">
+                                    Reset
+                                </button>
+                        
+                            </div>
+                        
+                        </div>
+                    </div> -->
+                    <div class="fu d2 rounded-2xl overflow-hidden border border-gray-100 shadow-sm"
+                        style="height:calc(100% - 70px);min-height:500px">
+                        <div id="map" style="height:100%;width:100%;border-radius:1rem"></div>
+                    </div>
+                </div>
+
+                <!-- ── REPORTS ── -->
+                <div id="page-reports" class="page p-4 md:p-6 space-y-5">
+                
+                    <div class="fu d1">
+                        <h2 class="text-[16px] font-bold text-gray-900">Resources</h2>
+                        <p class="text-[12px] text-gray-400 mt-0.5">
+                            Tenders, Charters and Documents
+                        </p>
+                    </div>
+                
+                    <!-- Resources Grid -->
+                    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                
+                        {% for resource in resources %}
+                        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 hover:shadow-md transition">
+                
+                            <!-- PDF Icon -->
+                            <div class="flex items-center gap-3 mb-4">
+                                <div class="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
+                                    📄
+                                </div>
+                
+                                <div>
+                                    <h3 class="text-[14px] font-semibold text-gray-900">
+                                        {{ resource.title }}
+                                    </h3>
+                
+                                    <p class="text-[11px] text-gray-400">
+                                        {{ resource.created_at|date:"M d, Y" }}
+                                    </p>
+                                </div>
+                            </div>
+                
+                            <!-- Download Button -->
+                            <a href="{{ resource.notice_file.url }}" download
+                                class="w-full inline-flex items-center justify-center gap-2 px-4 py-2 text-[13px] font-medium text-white bg-[#7c9cb4] rounded-lg hover:bg-[#6b8fa8] transition">
+                
+                                ⬇ Download
+                            </a>
+                
+                        </div>
+                        {% empty %}
+                
+                        <div class="col-span-full text-center py-16 text-gray-400">
+                            No resources available yet
+                        </div>
+                
+                        {% endfor %}
+                
+                    </div>
+                
+                </div>
+
+                <!-- ── SETTINGS ── -->
+                <div id="page-settings" class="page p-4 md:p-6 space-y-5">
+                    {% if request.user.is_authenticated %}
+                    <!-- Header -->
+                    <div class="fu d1">
+                        <h2 class="text-[16px] font-bold text-gray-900">Settings</h2>
+                        <p class="text-[12px] text-gray-400 mt-0.5">Manage your account, application &amp; facilities
+                        </p>
+                    </div>
+
+                    <!-- Sub-tab buttons -->
+                    <div
+                        class="fu d1 flex flex-wrap items-center gap-1 bg-white border border-gray-100 shadow-sm rounded-2xl p-1 w-fit mx-auto">
+                        <button class="stab text-[12.5px] font-semibold px-4 py-2 rounded-xl transition-all"
+                            onclick="showSettingsTab('profile')">Profile</button>
+                        <button class="stab text-[12.5px] font-semibold px-4 py-2 rounded-xl transition-all text-gray-500"
+                            onclick="showSettingsTab('application')">My Application</button>
+                        <button class="stab text-[12.5px] font-semibold px-4 py-2 rounded-xl transition-all text-gray-500"
+                            onclick="showSettingsTab('facilities')">My Facilities</button>
+                        <button class="stab text-[12.5px] font-semibold px-4 py-2 rounded-xl transition-all text-gray-500"
+                            onclick="showSettingsTab('activities')">My Activities</button>
+                    </div>
+
+                    <!-- ── PROFILE ── -->
+                    <div id="stab-profile" class="stab-panel hidden space-y-5 max-w-2xl">
+                        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                            <div class="px-5 py-4 border-b border-gray-100">
+                                <h3 class="text-[14px] font-bold text-gray-900">Profile Details</h3>
+                            </div>
+                            <div class="p-5 space-y-4">
+                                <div class="flex items-center gap-4 pb-4 border-b border-gray-50">
+                                    <div
+                                        class="w-14 h-14 rounded-2xl flex items-center justify-center text-white text-lg font-bold flex-shrink-0">
+                                        {% if request.user.logo %}
+                                            <img src="{{ request.user.logo.url }}" alt="request.user.org_name">
+                                        {% else %}
+                                            {{ request.user.org_name|default:"U"|slice:":1"|upper }}
+                                        {% endif %}
+                                    </div>
+                                    <div class="flex-1">
+                                        <p class="font-semibold text-gray-900">{{ request.user.org_name }}</p>
+                                        <p class="text-[12px] text-gray-400">{{ request.user.email }} · 
+                                            {{ request.user.get_status_display }}</p>
+                                    </div>
+                                </div>
+                                <form data-form="profile">
+                                    {% csrf_token %}
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div><label class="field-label">Organization Name</label><input type="text" name="org_name" value="{{ request.user.org_name }}"
+                                            class="field"></div>
+                                    <div><label class="field-label">Contact Person</label><input type="text" name="contact_person" value="{{ request.user.contact_person }}"
+                                            class="field"></div>
+                                    <div><label class="field-label">Email</label><input type="email" name="email"
+                                            value="{{ request.user.email }}" class="field"></div>
+                                    <div><label class="field-label">Correspondence Number:</label><input name="correspondence_phone" type="text"
+                                            value="{{ request.user.correspondence_phone }}"
+                                            class="field"></div>
+                                </div>
+                                <button type="submit"
+                                    class="bg-primary hover:bg-secondary text-white text-[13px] font-semibold px-5 py-2.5 rounded-xl transition-colors">Save
+                                    Changes
+                                </button>
+                                </form>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                            <div class="px-5 py-4 border-b border-gray-100">
+                                <h3 class="text-[14px] font-bold text-gray-900">Change Password</h3>
+                            </div>
+                            <form data-form="password">
+                                {% csrf_token %}
+                            <div class="p-5 space-y-4">
+                                <div><label class="field-label">Current Password</label><input name="current_password" type="password"
+                                        placeholder="••••••••" class="field" required></div>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div><label class="field-label">New Password</label><input name="new_password" type="password"
+                                            placeholder="••••••••" class="field" required></div>
+                                    <div><label class="field-label">Confirm New Password</label><input name="confirm_new_password" type="password"
+                                            placeholder="••••••••" class="field" required></div>
+                                </div>
+                                <button type="submit"
+                                    class="bg-primary hover:bg-secondary text-white text-[13px] font-semibold px-5 py-2.5 rounded-xl transition-colors">Update
+                                    Password</button>
+                            </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Status card -->
+                    <div id="stab-application" class="stab-panel hidden space-y-5 max-w-3xl">
+                        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                            <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+                                <div>
+                                    <h3 class="text-[14px] font-bold text-gray-900">Registration Application</h3>
+                                    <p class="text-[12px] text-gray-400 mt-0.5">
+                                        Submitted {{ my_application.date_joined|date:"d M Y" }} 
+                                        {{ my_application.id|stringformat:"04d" }}
+                                    </p>
+                                </div>
+                                <span id="app-status-badge" class="inline-flex items-center gap-1.5 {% if my_application.status == 'pending' %}bg-amber-50 text-amber-700 border-amber-200
+                                    {% elif my_application.status == 'approved' %}bg-emerald-50 text-emerald-700 border-emerald-200
+                                    {% elif my_application.status == 'rejected' %}bg-red-50 text-red-700 border-red-200 {% endif %} 
+                                    text-[12px] font-semibold px-3 py-1.5 rounded-full">
+                                    <span
+                                        class="w-2 h-2 rounded-full {% if my_application.status == 'pending' %}bg-amber-400 animate-pulse
+                                    {% elif my_application.status == 'approved' %}bg-emerald-500 {% elif my_application.status == 'rejected' %}bg-red-500 {% endif %}"></span>
+                                    {{ my_application.status|capfirst }}
+                                </span>
+                            </div>
+                        
+                            <!-- Timeline -->
+                            <div class="px-5 py-5 space-y-0">
+                                <div class="flex gap-4">
+                                    <div class="flex flex-col items-center">
+                                        <div class="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0">
+                                            <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd"
+                                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                                    clip-rule="evenodd" />
+                                            </svg>
+                                        </div>
+                                        <div class="w-px flex-1 bg-gray-200 my-1"></div>
+                                    </div>
+                                    <div class="pb-5">
+                                        <p class="text-[13.5px] font-semibold text-gray-900">Application Submitted</p>
+                                        <p class="text-[12px] text-gray-400 mt-0.5">{{ my_application.date_joined|date:"d M Y, H:i A" }}</p>
+                                        <p class="text-[12px] text-gray-500 mt-1">Your registration form was received by the IDL team.</p>
+                                    </div>
+                                </div>
+                        
+                                {% if my_application.status == "pending" %}
+                                <div class="flex gap-4">
+                                    <div class="flex flex-col items-center">
+                                        <div class="w-8 h-8 rounded-full bg-amber-400 flex items-center justify-center flex-shrink-0">
+                                            <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd"
+                                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
+                                                    clip-rule="evenodd" />
+                                            </svg>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <p class="text-[13.5px] font-semibold text-gray-900">Awaiting Final Decision</p>
+                                        <p class="text-[12px] text-gray-400 mt-0.5">You will be notified by email once a decision is made.</p>
+                                    </div>
+                                </div>
+                                {% elif my_application.status == "approved" %}
+                                <div class="flex gap-4">
+                                    <div class="flex flex-col items-center">
+                                        <div class="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0">
+                                            <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd"
+                                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                                    clip-rule="evenodd" />
+                                            </svg>
+                                        </div>
+                                        <div class="w-px flex-1 bg-gray-200 my-1"></div>
+                                    </div>
+                                    <div class="pb-5">
+                                        <p class="text-[13.5px] font-semibold text-gray-900">Application Approved</p>
+                                        <p class="text-[12px] text-gray-400 mt-0.5">{{ my_application.reviewed_at|date:"d M Y, H:i A" }}</p>
+                                        <p class="text-[12px] text-gray-500 mt-1">Your registration has been approved.</p>
+                                    </div>
+                                </div>
+                                {% elif my_application.status == "rejected" %}
+                                <div id="app-rejection-note"
+                                    class="mx-5 mb-5 flex items-start gap-3 bg-red-50 border border-red-200 rounded-xl px-4 py-3.5">
+                                    <svg class="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd"
+                                            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                                            clip-rule="evenodd" />
+                                    </svg>
+                                    <div>
+                                        <p class="text-[12.5px] font-semibold text-red-800">Rejection Reason from IDL</p>
+                                        <p class="text-[12px] text-red-700 mt-1 leading-relaxed">{{ my_application.rejection_reason }}</p>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <!-- FACILITIES -->
+
+                    <div id="stab-facilities" class="stab-panel hidden space-y-5">
+                        <div class="flex flex-wrap items-center justify-between gap-3">
+                            <div>
+                                <h3 class="text-[15px] font-bold text-gray-900">My Facilities</h3>
+                                <p class="text-[12px] text-gray-400 mt-0.5">Facilities you have submitted — click Update to edit</p>
+                            </div>
+                            <button onclick="openFacilityModal()"
+                                class="flex items-center gap-2 bg-primary hover:bg-secondary text-white text-[12.5px] font-semibold px-4 py-2 rounded-xl transition-colors shadow-[0_2px_10px_rgba(188,36,75,.3)]">
+                                <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd"
+                                        d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                                        clip-rule="evenodd" />
+                                </svg>
+                                Add New Facility
+                            </button>
+                        </div>
+
+                        <!-- Facilities List Section -->
+                        <div class="space-y-4">
+                            {% for facility in my_facilities %}
+                            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                                <!-- Header -->
+                                <div class="flex items-center gap-4 px-5 py-4 border-b border-gray-100">
+                                    <div
+                                        class="w-10 h-10 rounded-xl {% if facility.is_approved %}bg-primary{% elif facility.status == 'pending' %}bg-secondary{% else %}bg-rose-500{% endif %} flex items-center justify-center text-white text-[11px] font-bold flex-shrink-0">
+                                        {{ facility.name|slice:":2"|upper }}
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-[14px] font-bold text-gray-900">{{ facility.name }}</p>
+                                        <p class="text-[12px] text-gray-400 mt-0.5">{{ facility.county }} · {{ facility.org_type }} ·
+                                            Submitted {{ facility.submitted_at|date:"d M Y" }}</p>
+                                    </div>
+                                    <span
+                                        class="inline-flex items-center gap-1.5 {% if facility.is_approved %}bg-emerald-50 text-emerald-700 border border-emerald-200{% elif facility.status == 'pending' %}bg-amber-50 text-amber-700 border border-amber-200{% else %}bg-red-50 text-red-700 border border-red-200{% endif %} text-[11.5px] font-semibold px-3 py-1.5 rounded-full flex-shrink-0">
+                                        <span
+                                            class="w-1.5 h-1.5 rounded-full {% if facility.is_approved %}bg-emerald-500{% elif facility.status == 'pending' %}bg-amber-400 animate-pulse{% else %}bg-red-500{% endif %}"></span>
+                                        {% if facility.is_approved %}Approved{% elif facility.status == 'pending' %}Pending{% else %}Rejected{% endif %}
+                                    </span>
+                                </div>
+                        
+                                <!-- Facility Details -->
+                                <div class="px-5 py-3.5 grid grid-cols-2 sm:grid-cols-4 gap-4 bg-gray-50/50 border-b border-gray-100">
+                                    <div>
+                                        <p class="text-[10.5px] text-gray-400 uppercase tracking-wide font-semibold mb-1">MH Focus</p>
+                                        <p class="text-[12.5px] font-medium text-gray-800">
+                                            {% if facility.mh_service_categories %}
+                                            {{ facility.mh_service_categories|join:", " }}
+                                            {% else %}
+                                            -
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p class="text-[10.5px] text-gray-400 uppercase tracking-wide font-semibold mb-1">Year Founded</p>
+                                        <p class="text-[12.5px] font-medium text-gray-800">{{ facility.year_founded|default:"-" }}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-[10.5px] text-gray-400 uppercase tracking-wide font-semibold mb-1">County</p>
+                                        <p class="text-[12.5px] font-medium text-gray-800">{{ facility.county }}</p>
+                                    </div>
+                                    <div>
+                                        {% if facility.is_approved %}
+                                        <p class="text-[10.5px] text-gray-400 uppercase tracking-wide font-semibold mb-1">Last Updated</p>
+                                        <p class="text-[12.5px] font-medium text-gray-800">{{ facility.updated_at|date:"M d, Y" }}</p>
+                                        {% elif facility.status == 'pending' %}
+                                        <p class="text-[10.5px] text-gray-400 uppercase tracking-wide font-semibold mb-1">Submitted</p>
+                                        <p class="text-[12.5px] font-medium text-gray-800">{{ facility.submitted_at|date:"M d, Y" }}</p>
+                                        {% else %}
+                                        <p class="text-[10.5px] text-gray-400 uppercase tracking-wide font-semibold mb-1">Rejected On</p>
+                                        <p class="text-[12.5px] font-medium text-gray-800">{{ facility.reviewed_at|date:"M d, Y" }}</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                        
+                                <!-- Status Messages -->
+                                {% if facility.is_approved %}
+                                <div class="flex items-start gap-3 mx-5 my-4 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3">
+                                    <svg class="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd"
+                                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                            clip-rule="evenodd" />
+                                    </svg>
+                                    <div>
+                                        <p class="text-[12.5px] font-semibold text-emerald-800">Approved by IDL —
+                                            {{ facility.reviewed_at|date:"d M Y" }}</p>
+                                        <p class="text-[12px] text-emerald-700 mt-0.5">Your facility is live on the public dashboard.
+                                            Updates will be reviewed before going live.</p>
+                                    </div>
+                                </div>
+                        
+                                {% elif facility.status == 'pending' %}
+                                <div class="flex items-start gap-3 mx-5 my-4 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3">
+                                    <svg class="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd"
+                                            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                                            clip-rule="evenodd" />
+                                    </svg>
+                                    <div>
+                                        <p class="text-[12.5px] font-semibold text-blue-800">Currently Under Review</p>
+                                        <p class="text-[12px] text-blue-700 mt-0.5">The IDL team is reviewing your submission. You can
+                                            update details — changes will be included in the current review.</p>
+                                    </div>
+                                </div>
+                        
+                                {% else %}
+                                <div class="flex items-start gap-3 mx-5 my-4 bg-red-50 border border-red-200 rounded-xl px-4 py-3.5">
+                                    <svg class="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd"
+                                            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                                            clip-rule="evenodd" />
+                                    </svg>
+                                    <div>
+                                        <p class="text-[12.5px] font-semibold text-red-800">Rejection Reason —
+                                            {{ facility.reviewed_at|date:"d M Y" }}</p>
+                                        <p class="text-[12px] text-red-700 mt-1 leading-relaxed">{{ facility.rejection_reason }}</p>
+                                    </div>
+                                </div>
+                                {% endif %}
+                        
+                                <!-- Action Buttons -->
+                                <div class="px-5 pb-4 flex gap-2">
+                                    <button onclick="openEditFacilityModal('{{ facility.id }}')"
+                                        class="flex items-center gap-2 {% if facility.is_approved %}bg-primary hover:bg-secondary text-white{% elif facility.status == 'pending' %}bg-white border border-gray-200 hover:border-secondary text-gray-600 hover:text-secondary{% else %}bg-primary hover:bg-secondary text-white{% endif %} text-[12.5px] font-semibold px-4 py-2 rounded-xl transition-colors">
+                                        <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                                            <path
+                                                d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                                        </svg>
+                                        {% if facility.is_approved %}Update Facility{% elif facility.status == 'pending' %}Update While
+                                        Pending{% else %}Fix & Resubmit{% endif %}
+                                    </button>
+                                </div>
+                            </div>
+                            {% empty %}
+                            <p class="text-gray-500 text-[12px]">You have not submitted any facilities yet.</p>
+                            {% endfor %}
+                        </div>
+                        
+                        <!-- Modal Container -->
+                        <div id="edit-facility-modal"
+                            class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-black/20 backdrop-blur-sm p-4 overflow-y-auto">
+                            <!-- Modal content will be inserted here by JavaScript -->
+                        </div>
+                        <style>
+                            .field-label {
+                                display: block;
+                                font-size: 12px;
+                                font-weight: 500;
+                                color: #374151;
+                                margin-bottom: 6px;
+                            }
+                        
+                            .field {
+                                width: 100%;
+                                padding: 10px 12px;
+                                border: 1px solid #e5e7eb;
+                                border-radius: 8px;
+                                font-size: 13px;
+                                font-family: inherit;
+                                transition: all 0.2s;
+                            }
+                        
+                            .field:focus {
+                                outline: none;
+                                border-color: #bc244b;
+                                box-shadow: 0 0 0 3px rgba(188, 36, 75, 0.1);
+                            }
+                        
+                            .field::placeholder {
+                                color: #9ca3af;
+                            }
+                        
+                            @keyframes fadeUp {
+                                from {
+                                    opacity: 0;
+                                    transform: translateY(20px);
+                                }
+                        
+                                to {
+                                    opacity: 1;
+                                    transform: translateY(0);
+                                }
+                            }
+                        </style>
+
+                    </div>
+
+                    <div id="stab-activities" class="stab-panel hidden space-y-5">
+                        <div class="flex flex-wrap items-center justify-between gap-3">
+                            <div>
+                                <h3 class="text-[15px] font-bold text-gray-900">My Activities</h3>
+                                <p class="text-[12px] text-gray-400 mt-0.5">Activities you have submitted</p>
+                            </div>
+                            <button onclick="openActivityModal()"
+                                class="flex items-center gap-2 bg-primary hover:bg-secondary text-white text-[12.5px] font-semibold px-4 py-2 rounded-xl transition-colors shadow-[0_2px_10px_rgba(188,36,75,.3)]">
+                                <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd"
+                                        d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                                        clip-rule="evenodd" />
+                                </svg>
+                                Add Activity
+                            </button>
+                        </div>
+                    
+                        <!-- Facilities List Section -->
+                        <div class="space-y-4">
+                        
+                            {% for activity in activities %}
+                            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+                        
+                                <div class="flex justify-between items-start">
+                        
+                                    <div>
+                                        <h3 class="text-[14px] font-semibold text-gray-900">
+                                            {{ activity.reporting_organisation }}
+                                        </h3>
+                        
+                                        <div class="mt-2 text-[11px] text-gray-400">
+                                            {{ activity.sub_county }} • {{ activity.period }}
+                                        </div>
+                                    </div>
+                        
+                                    <span class="text-[11px] px-3 py-1 rounded-full bg-green-100 text-green-700">
+                        
+                                        {{ activity.level_of_implementation }}
+                        
+                                    </span>
+                        
+                                </div>
+                        
+                                <div class="grid grid-cols-3 gap-3 mt-4 text-[12px]">
+                        
+                                    <div>
+                                        <p class="text-gray-400">Target Population</p>
+                                        <p class="font-semibold">{{ activity.target_population }}</p>
+                                    </div>
+                        
+                                    <div>
+                                        <p class="text-gray-400">Persons Reached</p>
+                                        <p class="font-semibold">{{ activity.numbers_reached }}</p>
+                                    </div>
+                        
+                                    <div>
+                                        <p class="text-gray-400">Cost</p>
+                                        <p class="font-semibold">KES {{ activity.cost }}</p>
+                                    </div>
+                        
+                                </div>
+                        
+                            </div>
+                        
+                            {% empty %}
+                        
+                            <div class="text-center text-gray-400 py-10">
+                                No activities submitted yet
+                            </div>
+                        
+                            {% endfor %}
+                        
+                        </div>
+
+                        <!-- Activity Modal -->
+                        <div id="activity-modal"
+                            class="hidden fixed inset-0 z-[80] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+                        
+                            <div class="bg-white w-full max-w-3xl rounded-2xl shadow-xl overflow-hidden max-h-[90vh] flex flex-col">
+                        
+                                <!-- Header -->
+                                <div class="flex items-center justify-between px-6 py-4 border-b bg-gray-50">
+                                    <div>
+                                        <h3 class="text-[15px] font-bold text-gray-900">Add Activity</h3>
+                                        <p class="text-[12px] text-gray-400">Submit a new activity</p>
+                                    </div>
+                        
+                                    <button onclick="closeActivityModal()"
+                                        class="w-8 h-8 rounded-lg hover:bg-gray-200 flex items-center justify-center transition">
+                                        ✕
+                                    </button>
+                                </div>
+                        
+                                <!-- Form -->
+                                <form method="POST" action="{% url 'add_activity' %}" class="flex-1 overflow-y-auto">
+                        
+                                    {% csrf_token %}
+                        
+                                    <div class="p-6 space-y-6">
+                        
+                                        <!-- Partner Info -->
+                                        <div class="space-y-4">
+                                            <h4 class="text-[13px] font-semibold text-gray-800 border-b pb-2">
+                                                Partner Information
+                                            </h4>
+                        
+                                            <div class="grid md:grid-cols-2 gap-4">
+                        
+                                                <div>
+                                                    <label class="text-[12px] font-medium text-gray-600">Partner Name</label>
+                                                    <input type="text" name="partner_name"
+                                                        class="w-full mt-1 border border-gray-200 rounded-xl px-3 py-2 text-[13px] focus:ring-2 focus:ring-primary focus:border-primary">
+                                                </div>
+                        
+                                                <div>
+                                                    <label class="text-[12px] font-medium text-gray-600">Sub County</label>
+                                                    <input type="text" name="sub_county"
+                                                        class="w-full mt-1 border border-gray-200 rounded-xl px-3 py-2 text-[13px] focus:ring-2 focus:ring-primary">
+                                                </div>
+                        
+                                            </div>
+                                        </div>
+                        
+                                        <!-- Strategic Info -->
+                                        <div class="space-y-4">
+                                            <h4 class="text-[13px] font-semibold text-gray-800 border-b pb-2">
+                                                Strategic Information
+                                            </h4>
+                        
+                                            <div class="grid md:grid-cols-2 gap-4">
+                        
+                                                <div>
+                                                    <label class="text-[12px] font-medium text-gray-600">Strategic Objective</label>
+                                                    <input type="text" name="strategic_objective"
+                                                        class="w-full mt-1 border border-gray-200 rounded-xl px-3 py-2 text-[13px]">
+                                                </div>
+                        
+                                                <div>
+                                                    <label class="text-[12px] font-medium text-gray-600">Strategic Area</label>
+                                                    <input type="text" name="strategic_area"
+                                                        class="w-full mt-1 border border-gray-200 rounded-xl px-3 py-2 text-[13px]">
+                                                </div>
+                        
+                                                <div class="md:col-span-2">
+                                                    <label class="text-[12px] font-medium text-gray-600">Strategic Action</label>
+                                                    <input type="text" name="strategic_action"
+                                                        class="w-full mt-1 border border-gray-200 rounded-xl px-3 py-2 text-[13px]">
+                                                </div>
+                        
+                                            </div>
+                                        </div>
+                        
+                                        <!-- Activity -->
+                                        <div class="space-y-4">
+                                            <h4 class="text-[13px] font-semibold text-gray-800 border-b pb-2">
+                                                Activity Details
+                                            </h4>
+                        
+                                            <div>
+                                                <label class="text-[12px] font-medium text-gray-600">Activity</label>
+                                                <textarea name="activity"
+                                                    class="w-full mt-1 border border-gray-200 rounded-xl px-3 py-2 text-[13px] h-24"></textarea>
+                                            </div>
+                        
+                                        </div>
+                        
+                                        <!-- Implementation -->
+                                        <div class="space-y-4">
+                                            <h4 class="text-[13px] font-semibold text-gray-800 border-b pb-2">
+                                                Implementation
+                                            </h4>
+                        
+                                            <div class="grid md:grid-cols-3 gap-4">
+                        
+                                                <div>
+                                                    <label class="text-[12px] font-medium text-gray-600">Target Population</label>
+                                                    <input type="text" name="target_population"
+                                                        class="w-full mt-1 border border-gray-200 rounded-xl px-3 py-2 text-[13px]">
+                                                </div>
+                        
+                                                <div>
+                                                    <label class="text-[12px] font-medium text-gray-600">Numbers Reached</label>
+                                                    <input type="number" name="numbers_reached"
+                                                        class="w-full mt-1 border border-gray-200 rounded-xl px-3 py-2 text-[13px]">
+                                                </div>
+                        
+                                                <div>
+                                                    <label class="text-[12px] font-medium text-gray-600">Level</label>
+                                                    <select name="level_of_implementation"
+                                                        class="w-full mt-1 border border-gray-200 rounded-xl px-3 py-2 text-[13px]">
+                        
+                                                        <option value="planned">Planned</option>
+                                                        <option value="ongoing">Ongoing</option>
+                                                        <option value="completed">Completed</option>
+                        
+                                                    </select>
+                                                </div>
+                        
+                                            </div>
+                        
+                                        </div>
+                        
+                                        <!-- Cost -->
+                                        <div class="space-y-4">
+                                            <h4 class="text-[13px] font-semibold text-gray-800 border-b pb-2">
+                                                Period & Cost
+                                            </h4>
+                        
+                                            <div class="grid md:grid-cols-3 gap-4">
+                        
+                                                <div>
+                                                    <label class="text-[12px] font-medium text-gray-600">Period</label>
+                                                    <input type="text" name="period"
+                                                        class="w-full mt-1 border border-gray-200 rounded-xl px-3 py-2 text-[13px]">
+                                                </div>
+                        
+                                                <div>
+                                                    <label class="text-[12px] font-medium text-gray-600">Cost</label>
+                                                    <input type="number" step="0.01" name="cost"
+                                                        class="w-full mt-1 border border-gray-200 rounded-xl px-3 py-2 text-[13px]">
+                                                </div>
+                        
+                                                <div>
+                                                    <label class="text-[12px] font-medium text-gray-600">Overall Cost</label>
+                                                    <input type="number" step="0.01" name="overall_cost"
+                                                        class="w-full mt-1 border border-gray-200 rounded-xl px-3 py-2 text-[13px]">
+                                                </div>
+                        
+                                            </div>
+                        
+                                        </div>
+                        
+                                    </div>
+                        
+                                    <!-- Footer -->
+                                    <div class="border-t px-6 py-4 bg-gray-50 flex justify-end gap-3">
+                        
+                                        <button type="button" onclick="closeActivityModal()"
+                                            class="px-4 py-2 text-[13px] rounded-xl border border-gray-200 hover:bg-gray-100">
+                                            Cancel
+                                        </button>
+                        
+                                        <button type="submit"
+                                            class="px-5 py-2 text-[13px] font-semibold bg-primary text-white rounded-xl shadow-sm hover:bg-secondary transition">
+                                            Submit Activity
+                                        </button>
+                        
+                                    </div>
+                        
+                                </form>
+                        
+                            </div>
+                        
+                        </div>
+                    {% else %}
+                    <!-- Coming Soon Message -->
+                    <div class="fu d2 flex items-center justify-center h-64 bg-white rounded-2xl border border-gray-100 shadow-sm">
+                        <p class="text-gray-400 text-lg font-semibold">Please <a href="{% url 'login' %}"
+                                class="text-primary hover:underline">login</a> to view your settings</p>
+                    </div>
+                    {% endif %}
+                </div><!-- /settings -->
+
+
+            </div><!-- /content -->
+        </div><!-- /main -->
+    </div><!-- /dashboard -->
+
+
+<!-- ══════════════════════════════════════════════════════
+     ADD FACILITY MODAL  — 5-step form
+══════════════════════════════════════════════════════ -->
+<form id="facility-form" method="POST" enctype="multipart/form-data" action="{% url 'add_facility' %}">
+    {% csrf_token %}
+    <div id="facility-modal"
+        class="hidden fixed inset-0 z-[60] flex items-end sm:items-center justify-center sm:p-4 bg-black/50 backdrop-blur-sm">
+        <div
+            class="bg-white w-full sm:rounded-3xl sm:max-w-3xl max-h-[96vh] sm:max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+
+            <!-- ── Header ── -->
+            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <svg class="w-4 h-4 text-primary" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd"
+                                d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                                clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-[15px] font-bold text-gray-900">Add a Facility</h2>
+                        <p id="modal-step-name" class="text-[11.5px] text-gray-400 mt-0.5">Step 1 — Basic Information
+                        </p>
+                    </div>
+                </div>
+                <button onclick="closeFacilityModal()"
+                    class="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors flex-shrink-0">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd"
+                            d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                            clip-rule="evenodd" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- ── Progress bar (thin, full width) ── -->
+            <div class="h-1 bg-gray-100 flex-shrink-0">
+                <div id="modal-progress-bar" class="h-full bg-primary transition-all duration-500 ease-out"
+                    style="width:20%"></div>
+            </div>
+
+            <!-- ── Step pills ── -->
+            <div
+                class="flex items-center gap-1 px-6 py-3 border-b border-gray-100 bg-gray-50/60 flex-shrink-0 overflow-x-auto">
+                <div class="step-pill flex items-center gap-2 px-3 py-1.5 rounded-full text-[11.5px] font-semibold whitespace-nowrap transition-all"
+                    data-step="1">
+                    <span
+                        class="step-pill-num w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold bg-primary text-white">1</span>
+                    Basic Info
+                </div>
+                <svg class="w-3 h-3 text-gray-300 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2"
+                    viewBox="0 0 24 24">
+                    <path d="M9 18l6-6-6-6" />
+                </svg>
+                <div class="step-pill flex items-center gap-2 px-3 py-1.5 rounded-full text-[11.5px] font-semibold whitespace-nowrap transition-all text-gray-400"
+                    data-step="2">
+                    <span
+                        class="step-pill-num w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold bg-gray-200 text-gray-500">2</span>
+                    Online Presence
+                </div>
+                <svg class="w-3 h-3 text-gray-300 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2"
+                    viewBox="0 0 24 24">
+                    <path d="M9 18l6-6-6-6" />
+                </svg>
+                <div class="step-pill flex items-center gap-2 px-3 py-1.5 rounded-full text-[11.5px] font-semibold whitespace-nowrap transition-all text-gray-400"
+                    data-step="3">
+                    <span
+                        class="step-pill-num w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold bg-gray-200 text-gray-500">3</span>
+                    Classification
+                </div>
+                <svg class="w-3 h-3 text-gray-300 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2"
+                    viewBox="0 0 24 24">
+                    <path d="M9 18l6-6-6-6" />
+                </svg>
+                <div class="step-pill flex items-center gap-2 px-3 py-1.5 rounded-full text-[11.5px] font-semibold whitespace-nowrap transition-all text-gray-400"
+                    data-step="4">
+                    <span
+                        class="step-pill-num w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold bg-gray-200 text-gray-500">4</span>
+                    MH Focus
+                </div>
+                <svg class="w-3 h-3 text-gray-300 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2"
+                    viewBox="0 0 24 24">
+                    <path d="M9 18l6-6-6-6" />
+                </svg>
+                <div class="step-pill flex items-center gap-2 px-3 py-1.5 rounded-full text-[11.5px] font-semibold whitespace-nowrap transition-all text-gray-400"
+                    data-step="5">
+                    <span
+                        class="step-pill-num w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold bg-gray-200 text-gray-500">5</span>
+                    Achievements
+                </div>
+            </div>
+
+            <!-- ── Step body ── -->
+            <div class="flex-1 overflow-y-auto p-6">
+
+                <!-- STEP 0 — Approval Criteria -->
+                <div id="step-0" class="step-panel active">
+                    <div class="space-y-5">
+                
+                        <div>
+                            <h3 class="text-[14px] font-semibold text-gray-900 mb-2">
+                                Facility Approval Criteria
+                            </h3>
+                            <p class="text-[12px] text-gray-500">
+                                To ensure quality and accuracy, facilities must meet the following requirements to be approved.
+                            </p>
+                        </div>
+                
+                        <div class="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-3 text-[13px] text-gray-700">
+                
+                            <div class="flex gap-2">
+                                <span>•</span>
+                                <p>Facility must provide mental health services or related support</p>
+                            </div>
+                
+                            <div class="flex gap-2">
+                                <span>•</span>
+                                <p>Facility must be operational and currently active</p>
+                            </div>
+                
+                            <div class="flex gap-2">
+                                <span>•</span>
+                                <p>Accurate contact information must be provided</p>
+                            </div>
+                
+                            <div class="flex gap-2">
+                                <span>•</span>
+                                <p>Valid physical location or service coverage area must be specified</p>
+                            </div>
+                
+                            <div class="flex gap-2">
+                                <span>•</span>
+                                <p>Services listed must be relevant to mental health care</p>
+                            </div>
+                
+                            <div class="flex gap-2">
+                                <span>•</span>
+                                <p>Incomplete or misleading submissions may be rejected</p>
+                            </div>
+                
+                        </div>
+                
+                        <div class="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3">
+                            <p class="text-[12px] text-blue-800">
+                                Click "Next" to proceed with facility submission.
+                            </p>
+                        </div>
+                
+                    </div>
+                </div>
+
+                <!-- STEP 1 — Basic Information -->
+                <div id="step-1" class="step-panel">
+                    <p class="text-[11.5px] text-gray-400 mb-4">Fields marked <span
+                            class="text-primary font-semibold">*</span> are required.</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div class="sm:col-span-3">
+                            <label class="field-label">Name of Organization <span class="text-primary">*</span></label>
+                            <input type="text" name="name" placeholder="Full legal name of the organization" class="field">
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label class="field-label">Public Contact Email <span class="text-primary">*</span></label>
+                            <input type="email" name="public_email" placeholder="contact@organization.org" class="field">
+                        </div>
+                        <div>
+                            <label class="field-label">Contact Number 1 <span class="text-primary">*</span></label>
+                            <input type="tel" name="contact_number_1" placeholder="+254 7XX XXX XXX" class="field">
+                        </div>
+                        <div>
+                            <label class="field-label">Contact Number 2</label>
+                            <input type="tel" name="contact_number_2" placeholder="+254 7XX XXX XXX" class="field">
+                        </div>
+                        <div>
+                            <label class="field-label">Contact Number 3</label>
+                            <input type="tel" name="contact_number_3" placeholder="+254 7XX XXX XXX" class="field">
+                        </div>
+                        <div>
+                            <label class="field-label">Year Founded <span class="text-primary">*</span></label>
+                            <select class="field" id="year-founded" name="year_founded">
+                                <option value="" disabled selected>Select year</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="field-label">Registration Status <span class="text-primary">*</span></label>
+                            <select class="field" name="registration_status">
+                                <option value="" disabled selected>Select</option>
+                                <option value="Formal">Formal</option>
+                                <option value="Informal">Informal</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="field-label">Year Formally Registered <span class="text-primary">*</span></label>
+                            <input type="number" name="year_formally_registered" placeholder="e.g. 2015" min="1970" max="2026" class="field">
+                        </div>
+                        <div>
+                            <label class="field-label">Country of First Registration <span
+                                    class="text-primary">*</span></label>
+                            <input type="text" name="country_of_registration" placeholder="e.g. Kenya" class="field">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 2 — Online Presence -->
+                <div id="step-2" class="step-panel">
+                    <p class="text-[11.5px] text-gray-400 mb-4">Add your online presence so stakeholders can find and
+                        connect with you.</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="sm:col-span-2">
+                            <label class="field-label">Website URL</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2"
+                                        viewBox="0 0 24 24">
+                                        <circle cx="12" cy="12" r="10" />
+                                        <path d="M2 12h20M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20" />
+                                    </svg>
+                                </span>
+                                <input type="url" name="website" placeholder="https://www.organization.org" class="field pl-9">
+                            </div>
+                        </div>
+
+                        <!-- Social fields with icons -->
+                        <div>
+                            <label class="field-label">Twitter / X</label>
+                            <div class="relative">
+                                <span
+                                    class="absolute left-3 top-1/2 -translate-y-1/2 text-[11px] font-bold text-gray-400">𝕏</span>
+                                <input type="url" name="twitter" placeholder="https://x.com/handle" class="field pl-8">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="field-label">Facebook</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-blue-500">
+                                    <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z" />
+                                    </svg>
+                                </span>
+                                <input type="url" name="facebook" placeholder="https://facebook.com/page" class="field pl-9">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="field-label">WhatsApp Group</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-500">
+                                    <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+                                        <path
+                                            d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
+                                        <path
+                                            d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.121 1.533 5.855L0 24l6.336-1.508A11.943 11.943 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.891 0-3.661-.505-5.188-1.385l-.369-.219-3.766.896.955-3.671-.241-.383A9.944 9.944 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z" />
+                                    </svg>
+                                </span>
+                                <input type="url" name="whatsapp" placeholder="WhatsApp group invite link" class="field pl-9">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="field-label">LinkedIn</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-blue-600">
+                                    <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+                                        <path
+                                            d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z" />
+                                        <circle cx="4" cy="4" r="2" />
+                                    </svg>
+                                </span>
+                                <input type="url" name="linkedin" placeholder="https://linkedin.com/company/..." class="field pl-9">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="field-label">Instagram</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-pink-500">
+                                    <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+                                        <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+                                        <path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z" fill="white" />
+                                        <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" stroke="white" stroke-width="2"
+                                            stroke-linecap="round" />
+                                    </svg>
+                                </span>
+                                <input type="url" name="instagram" placeholder="https://instagram.com/handle" class="field pl-9">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="field-label">TikTok</label>
+                            <div class="relative">
+                                <span
+                                    class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-800 font-bold text-[11px]">TT</span>
+                                <input type="url" name="tiktok" placeholder="https://tiktok.com/@handle" class="field pl-8">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 3 — Classification -->
+                <div id="step-3" class="step-panel">
+                    <p class="text-[11.5px] text-gray-400 mb-4">Help us categorise your organization correctly for the
+                        public dashboard.</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div class="sm:col-span-3">
+                            <label class="field-label">Type of Organization <span class="text-primary">*</span></label>
+                            <select class="field" name="org_type" required>
+                                <option value="" disabled selected>Select organization type</option>
+                                <option value="International NGO">International NGO</option>
+                                <option value="Local NGO">Local NGO</option>
+                                <option value="Public">Public</option>
+                                <option value="Private">Private</option>
+                                <option value="Community Based Org">Community-Based Org</option>
+                                <option value="Coalition">Coalition</option>
+                                <option value="Network">Network</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="field-label">County Located <span class="text-primary">*</span></label>
+                            <input type="text" name="county" placeholder="e.g. Nairobi" class="field">
+                        </div>
+                        <div>
+                            <label class="field-label">Sub-County <span class="text-primary">*</span></label>
+                            <input type="text" name="sub_county" placeholder="e.g. Westlands" class="field">
+                        </div>
+                        <div>
+                            <label class="field-label">Street Address <span class="text-primary">*</span></label>
+                            <input type="text" name="street_address" placeholder="e.g. 123 Main Street" class="field">
+                        </div>
+                        <div>
+                            <label class="field-label">Latitude <span class="text-primary">*</span></label>
+                            <input type="number" name="latitude" step="any" placeholder="e.g. -1.292100" class="field">
+                        </div>
+                        <div>
+                            <label class="field-label">Longitude <span class="text-primary">*</span></label>
+                            <input type="number" name="longitude" step="any" placeholder="e.g. 36.821900" class="field">
+                        </div>
+                        <div>
+                            <label class="field-label">Main Funding Sources <span class="text-primary">*</span></label>
+                            <select class="field" name="funding_source" required>
+                                <option value="" disabled selected>Select funding source</option>
+                                <option value="Local">Local (≥50%)</option>
+                                <option value="Foreign">Foreign (≥50%)</option>
+                                <option value="Mixed">Mixed</option>
+                            </select>
+                        </div>
+
+                        <!-- Yes/No selects row -->
+                        <div>
+                            <label class="field-label">Youth Organization? <span class="text-primary">*</span></label>
+                            <select class="field" name="is_youth_org" id="youth-org-select" onchange="toggleYouthType()">
+                                <option value="" disabled selected>Select</option>
+                                <option value="Yes">Yes</option>
+                                <option value="No">No</option>
+                            </select>
+                        </div>
+                        <div id="youth-type-wrap">
+                            <label class="field-label">Youth Type <span class="text-primary">*</span></label>
+                            <select class="field" name="youth_type">
+                                <option value="" disabled selected>Select type</option>
+                                <option value="Youth-led">Youth-led</option>
+                                <option value="Youth-serving">Youth-serving</option>
+                                <option value="Youth-led & Youth-serving">Youth-led & Youth-serving</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="field-label">Disability Org? <span class="text-primary">*</span></label>
+                            <select class="field" name="is_disability_org">
+                                <option value="" disabled selected>Select</option>
+                                <option value="yes">Yes</option>
+                                <option value="no">No</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="field-label">Women-led? <span class="text-primary">*</span></label>
+                            <select class="field" name="is_female_led">
+                                <option value="" disabled selected>Select</option>
+                                <option value="yes">Yes</option>
+                                <option value="no">No</option>
+                            </select>
+                        </div>
+
+                        <!-- Areas of Intervention -->
+                        <div class="sm:col-span-3">
+                            <label class="field-label mb-2">
+                                Areas of Intervention
+                                <span class="text-primary">*</span>
+                            </label>
+                        
+                            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        
+                                <label class="check-tile">
+                                    <input type="checkbox" name="areas_of_intervention" value="Health">
+                                    Health
+                                </label>
+                        
+                                <label class="check-tile">
+                                    <input type="checkbox" name="areas_of_intervention" value="Mental Health">
+                                    Mental Health
+                                </label>
+                        
+                                <label class="check-tile">
+                                    <input type="checkbox" name="areas_of_intervention" value="Education">
+                                    Education
+                                </label>
+                        
+                                <label class="check-tile">
+                                    <input type="checkbox" name="areas_of_intervention" value="Environment">
+                                    Environment
+                                </label>
+                        
+                                <label class="check-tile">
+                                    <input type="checkbox" name="areas_of_intervention" value="Climate Change">
+                                    Climate Change
+                                </label>
+                        
+                                <label class="check-tile">
+                                    <input type="checkbox" name="areas_of_intervention" value="Livelihoods">
+                                    Livelihoods
+                                </label>
+                        
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 4 — MH Focus -->
+                <div id="step-4" class="step-panel space-y-5">
+                    <p class="text-[11.5px] text-gray-400">Select the mental health areas and service categories your
+                        organization actively works in.</p>
+
+                    <!-- Focus areas -->
+                    <div>
+                        <label class="field-label mb-2.5">Focus Area on Mental Health <span
+                                class="text-primary">*</span></label>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                            <label
+                                class="check-tile flex items-start gap-3 px-4 py-3 rounded-xl border border-gray-200 cursor-pointer hover:border-primary/40 hover:bg-primary/[.03] transition-all has-[:checked]:border-primary has-[:checked]:bg-primary/[.06]">
+                                <input type="checkbox" name="mh_focus_areas" value="Promotive & Preventive" class="accent-primary w-3.5 h-3.5 flex-shrink-0 mt-0.5">
+                                <div>
+                                    <p class="text-[12.5px] font-semibold text-gray-800">Promotive &amp; Preventive</p>
+                                    <p class="text-[11px] text-gray-400 mt-0.5">Awareness, education, early intervention
+                                    </p>
+                                </div>
+                            </label>
+                            <label
+                                class="check-tile flex items-start gap-3 px-4 py-3 rounded-xl border border-gray-200 cursor-pointer hover:border-primary/40 hover:bg-primary/[.03] transition-all has-[:checked]:border-primary has-[:checked]:bg-primary/[.06]">
+                                <input type="checkbox" name="mh_focus_areas" value="Curative" class="accent-primary w-3.5 h-3.5 flex-shrink-0 mt-0.5">
+                                <div>
+                                    <p class="text-[12.5px] font-semibold text-gray-800">Curative</p>
+                                    <p class="text-[11px] text-gray-400 mt-0.5">Treatment and clinical services</p>
+                                </div>
+                            </label>
+                            <label
+                                class="check-tile flex items-start gap-3 px-4 py-3 rounded-xl border border-gray-200 cursor-pointer hover:border-primary/40 hover:bg-primary/[.03] transition-all has-[:checked]:border-primary has-[:checked]:bg-primary/[.06]">
+                                <input type="checkbox" name="mh_focus_areas" value="Rehabilitative" class="accent-primary w-3.5 h-3.5 flex-shrink-0 mt-0.5">
+                                <div>
+                                    <p class="text-[12.5px] font-semibold text-gray-800">Rehabilitative</p>
+                                    <p class="text-[11px] text-gray-400 mt-0.5">Recovery and reintegration</p>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Service categories -->
+                    <div>
+                        <label class="field-label mb-2.5">MH Service Categories <span
+                                class="text-primary">*</span></label>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                            <label
+                                class="check-tile flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border border-gray-200 cursor-pointer hover:border-primary/40 hover:bg-primary/[.03] transition-all text-[12.5px] text-gray-700 has-[:checked]:border-primary has-[:checked]:bg-primary/[.06] has-[:checked]:text-primary has-[:checked]:font-semibold"><input
+                                    type="checkbox" name="mh_service_categories" value="Psychotherapy & Counseling" class="accent-primary w-3.5 h-3.5 flex-shrink-0"> Psychotherapy
+                                &amp; Counseling</label>
+                            <label
+                                class="check-tile flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border border-gray-200 cursor-pointer hover:border-primary/40 hover:bg-primary/[.03] transition-all text-[12.5px] text-gray-700 has-[:checked]:border-primary has-[:checked]:bg-primary/[.06] has-[:checked]:text-primary has-[:checked]:font-semibold"><input
+                                    type="checkbox" name="mh_service_categories" value="Mental Wellness Clinic" class="accent-primary w-3.5 h-3.5 flex-shrink-0"> Mental Wellness
+                                Clinic</label>
+                            <label
+                                class="check-tile flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border border-gray-200 cursor-pointer hover:border-primary/40 hover:bg-primary/[.03] transition-all text-[12.5px] text-gray-700 has-[:checked]:border-primary has-[:checked]:bg-primary/[.06] has-[:checked]:text-primary has-[:checked]:font-semibold"><input
+                                    type="checkbox" name="mh_service_categories" value="Psychiatry" class="accent-primary w-3.5 h-3.5 flex-shrink-0"> Psychiatry</label>
+                            <label
+                                class="check-tile flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border border-gray-200 cursor-pointer hover:border-primary/40 hover:bg-primary/[.03] transition-all text-[12.5px] text-gray-700 has-[:checked]:border-primary has-[:checked]:bg-primary/[.06] has-[:checked]:text-primary has-[:checked]:font-semibold"><input
+                                    type="checkbox" name="mh_service_categories" value="School Mental Health" class="accent-primary w-3.5 h-3.5 flex-shrink-0"> School Mental
+                                Health</label>
+                            <label
+                                class="check-tile flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border border-gray-200 cursor-pointer hover:border-primary/40 hover:bg-primary/[.03] transition-all text-[12.5px] text-gray-700 has-[:checked]:border-primary has-[:checked]:bg-primary/[.06] has-[:checked]:text-primary has-[:checked]:font-semibold"><input
+                                    type="checkbox" name="mh_service_categories" value="Community Mental Health" class="accent-primary w-3.5 h-3.5 flex-shrink-0"> Community Mental
+                                Health</label>
+                            <label
+                                class="check-tile flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border border-gray-200 cursor-pointer hover:border-primary/40 hover:bg-primary/[.03] transition-all text-[12.5px] text-gray-700 has-[:checked]:border-primary has-[:checked]:bg-primary/[.06] has-[:checked]:text-primary has-[:checked]:font-semibold"><input
+                                    type="checkbox" name="mh_service_categories" value="Child & Adolescent MH" class="accent-primary w-3.5 h-3.5 flex-shrink-0"> Child &amp;
+                                Adolescent MH</label>
+                            <label
+                                class="check-tile flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border border-gray-200 cursor-pointer hover:border-primary/40 hover:bg-primary/[.03] transition-all text-[12.5px] text-gray-700 has-[:checked]:border-primary has-[:checked]:bg-primary/[.06] has-[:checked]:text-primary has-[:checked]:font-semibold"><input
+                                    type="checkbox" name="mh_service_categories" value="Maternal MH" class="accent-primary w-3.5 h-3.5 flex-shrink-0"> Maternal
+                                MH</label>
+                            <label
+                                class="check-tile flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border border-gray-200 cursor-pointer hover:border-primary/40 hover:bg-primary/[.03] transition-all text-[12.5px] text-gray-700 has-[:checked]:border-primary has-[:checked]:bg-primary/[.06] has-[:checked]:text-primary has-[:checked]:font-semibold"><input
+                                    type="checkbox" name="mh_service_categories" value="MH Screening & Assessments" class="accent-primary w-3.5 h-3.5 flex-shrink-0"> MH Screening &amp;
+                                Assessments</label>
+                            <label
+                                class="check-tile flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border border-gray-200 cursor-pointer hover:border-primary/40 hover:bg-primary/[.03] transition-all text-[12.5px] text-gray-700 has-[:checked]:border-primary has-[:checked]:bg-primary/[.06] has-[:checked]:text-primary has-[:checked]:font-semibold"><input
+                                    type="checkbox" name="mh_service_categories" value="Men's Mental Health" class="accent-primary w-3.5 h-3.5 flex-shrink-0"> Men's Mental
+                                Health</label>
+                            <label
+                                class="check-tile flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border border-gray-200 cursor-pointer hover:border-primary/40 hover:bg-primary/[.03] transition-all text-[12.5px] text-gray-700 has-[:checked]:border-primary has-[:checked]:bg-primary/[.06] has-[:checked]:text-primary has-[:checked]:font-semibold"><input
+                                    type="checkbox" name="mh_service_categories" value="Rehabilitation" class="accent-primary w-3.5 h-3.5 flex-shrink-0">
+                                Rehabilitation</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 5 — Achievements & Advertising -->
+                <div id="step-5" class="step-panel space-y-5">
+                    <p class="text-[11.5px] text-gray-400">Tell us about your impact and whether you'd like to advertise
+                        on the platform.</p>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="sm:col-span-2">
+                            <label class="field-label">Achievements objectives and Key impact areas</label>
+                            <textarea name="achievements"
+                                placeholder="Describe key achievements, milestones, and the impact your organization has had on mental health in your community…"
+                                rows="4" class="field resize-none"></textarea>
+                        </div>
+                        <div>
+                            <label class="field-label">MH Funding Used (KES)</label>
+                            <input type="number" name="mh_funding_used_kes" placeholder="e.g. 2,500,000" min="0" class="field">
+                        </div>
+                    </div>
+
+                    <!-- Advertising options -->
+                    <div>
+                        <label class="field-label mb-2.5">Advertise on the Platform?</label>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <label
+                                class="relative flex flex-col gap-1.5 cursor-pointer border-2 border-gray-200 hover:border-gray-300 rounded-2xl px-4 py-4 transition-all has-[:checked]:border-primary has-[:checked]:bg-primary/[.03]">
+                                <input type="radio" name="advertise" value="none" class="sr-only" checked>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-[13px] font-semibold text-gray-800">Free</span>
+                                    <span
+                                        class="text-[11px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full font-medium">$0/mo</span>
+                                </div>
+                                <p class="text-[11.5px] text-gray-400 leading-snug">Standard directory listing only</p>
+                            </label>
+                            <label
+                                class="relative flex flex-col gap-1.5 cursor-pointer border-2 border-gray-200 hover:border-gray-300 rounded-2xl px-4 py-4 transition-all has-[:checked]:border-primary has-[:checked]:bg-primary/[.03]">
+                                <input type="radio" name="advertise" value="basic" class="sr-only">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-[13px] font-semibold text-gray-800">Basic</span>
+                                    <span
+                                        class="text-[11px] bg-secondary/15 text-secondary px-2 py-0.5 rounded-full font-medium">$25/mo</span>
+                                </div>
+                                <p class="text-[11.5px] text-gray-400 leading-snug">Banner ad on the public dashboard
+                                </p>
+                            </label>
+                            <label
+                                class="relative flex flex-col gap-1.5 cursor-pointer border-2 border-gray-200 hover:border-gray-300 rounded-2xl px-4 py-4 transition-all has-[:checked]:border-primary has-[:checked]:bg-primary/[.03]">
+                                <input type="radio" name="advertise" value="premium" class="sr-only">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-[13px] font-semibold text-gray-800">Premium</span>
+                                    <span
+                                        class="text-[11px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">$60/mo</span>
+                                </div>
+                                <p class="text-[11.5px] text-gray-400 leading-snug">Scrolling ticker header + banner ad
+                                </p>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Submit notice -->
+                    <div class="flex items-start gap-3 bg-emerald-50 border border-emerald-200 rounded-2xl px-4 py-3.5">
+                        <svg class="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" fill="currentColor"
+                            viewBox="0 0 20 20">
+                            <path fill-rule="evenodd"
+                                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                clip-rule="evenodd" />
+                        </svg>
+                        <div>
+                            <p class="text-[12.5px] font-semibold text-emerald-800">Ready to submit</p>
+                            <p class="text-[12px] text-emerald-700 mt-0.5">The IDL team will validate your form. Once
+                                approved, your facility appears on the public dashboard and you'll be notified by email.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div><!-- /step body -->
+
+            <!-- ── Footer ── -->
+            <div class="flex items-center justify-between px-6 py-4 border-t border-gray-100 bg-white flex-shrink-0">
+                <button type="button" id="modal-back" onclick="modalStep(-1)"
+                    class="flex items-center gap-2 text-[13px] font-semibold text-gray-500 hover:text-gray-800 px-4 py-2.5 rounded-xl hover:bg-gray-100 transition-colors"
+                    style="visibility:hidden">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path d="M15 18l-6-6 6-6" />
+                    </svg>
+                    Back
+                </button>
+                <span id="step-label" class="text-[12px] text-gray-400 font-medium">Step 1 of 5</span>
+                <button type="button" id="modal-next" onclick="modalStep(1)"
+                    class="flex items-center gap-2 bg-primary hover:bg-secondary text-white text-[13px] font-semibold px-5 py-2.5 rounded-xl transition-colors shadow-[0_2px_10px_rgba(188,36,75,.3)]">
+                    Next
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path d="M9 18l6-6-6-6" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+</form>
+
+
+<!-- Floating Feedback Button -->
+<button onclick="toggleFeedback()"
+    class="fixed bottom-6 right-6 z-50 bg-primary text-white w-14 h-14 rounded-full shadow-lg hover:scale-105 transition flex items-center justify-center">
+
+    💬
+</button>
+
+
+<!-- Feedback Chat Modal -->
+<div id="feedbackBox"
+    class="hidden fixed bottom-24 right-6 w-80 bg-white rounded-2xl shadow-2xl border border-gray-200 z-50">
+
+    <!-- Header -->
+    <div class="bg-primary text-white px-4 py-3 rounded-t-2xl">
+        <h3 class="text-sm font-semibold">Send Feedback</h3>
+        <p class="text-xs opacity-80">Help us improve the platform</p>
+    </div>
+
+    <!-- Form -->
+    <form method="POST" action="{% url 'submit_feedback' %}" class="p-4 space-y-3">
+        {% csrf_token %}
+
+        {% if not user.is_authenticated %}
+        <input type="text" name="name" placeholder="Your name (optional)"
+            class="w-full border rounded-xl px-3 py-2 text-sm">
+
+        <input type="email" name="email" placeholder="Your email (optional)"
+            class="w-full border rounded-xl px-3 py-2 text-sm">
+        {% endif %}
+
+        <textarea name="message" placeholder="Type your feedback..." required
+            class="w-full border rounded-xl px-3 py-2 text-sm h-24"></textarea>
+
+        <label class="flex items-center gap-2 text-xs text-gray-600">
+            <input type="checkbox" name="anonymous" checked>
+            Submit anonymously
+        </label>
+
+        <button type="submit"
+            class="w-full bg-primary text-white py-2 rounded-xl text-sm font-semibold hover:bg-secondary">
+            Send Feedback
+        </button>
+
+    </form>
+
+</div>
+
+
+
+
+
+    <!-- ══════════════════════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════════════════════ -->
+
+    {% for message in messages %}
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            const text = "{{ message|escapejs }}";
+            if (!text) return;
+            const toast = document.createElement('div');
+            toast.className = 'fixed bottom-6 right-6 z-[70] flex items-center gap-3 bg-gray-900 text-white px-5 py-4 rounded-2xl shadow-2xl text-[13.5px] font-medium';
+            toast.style.animation = 'fadeUp .3s ease forwards';
+            toast.innerHTML = `<svg class="w-5 h-5 text-emerald-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg> ${text}`;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 5000);
+        });
+    </script>
+    {% endfor %}
+    <script>
+
+        function openActivityModal() {
+            document.getElementById("activity-modal").classList.remove("hidden");
+        }
+
+        function closeActivityModal() {
+            document.getElementById("activity-modal").classList.add("hidden");
+        }
+
+    </script>
+    <script>
+
+        function toggleFeedback() {
+            document.getElementById("feedbackBox").classList.toggle("hidden");
+        }
+
+    </script>
+
+    <script>
+        setTimeout(function () {
+            document.getElementById("feedbackBox")?.classList.add("hidden")
+        }, 4000)
+    </script>
+
+    <!-- ── EDIT FACILITY MODAL CONTAINER ── -->
+    <div id="edit-facility-modal"
+        class="hidden fixed inset-0 z-[60] flex items-end sm:items-center justify-center sm:p-4 bg-black/50 backdrop-blur-sm">
+    </div>
+
+    <script src="{% static 'js/home.js' %}"></script>
+    <script src="{% static 'js/profile_update.js' %}"></script>
+
+</body>
+
+</html>

@@ -140,7 +140,7 @@ def dashboard_view(request):
         activity = Activity.objects.filter(reporting_organisation__email=request.user.email)
 
         if my_application:
-            my_facilities = my_application.facilities.all().order_by('-submitted_at')
+            my_facilities = my_application.facilities.filter(status=RegistrationStatus.APPROVED).order_by('-submitted_at')
 
     context = {
         'total': all_facilities.count(),

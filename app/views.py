@@ -13,12 +13,53 @@ from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Q, Sum
 import json
 from django.core.serializers.json import DjangoJSONEncoder
-import json
+from django.conf import settings
+from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
 
 
 # ─────────────────────────────────────────────
 #  REGISTER
 # ─────────────────────────────────────────────
+from threading import Thread
+
+def send_registration_emails(org, request):
+    context = {
+        "organization": org,
+        "facility": org,
+        "admin_url": request.build_absolute_uri("/admin/")
+    }
+
+    # User email
+    user_html = render_to_string(
+        "app/emails/facility_created_user.html",
+        context
+    )
+
+    user_email = EmailMultiAlternatives(
+        subject="ORGANIZATION REGISTRATION SUBMITTED",
+        body="",
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        to=[org.email],
+    )
+    user_email.attach_alternative(user_html, "text/html")
+    user_email.send()
+
+    # Admin email
+    admin_html = render_to_string(
+        "app/emails/facility_created_admin.html",
+        context
+    )
+
+    admin_email = EmailMultiAlternatives(
+        subject=f"NEW ORGANIZATION REGISTRATION - {org.org_name}",
+        body="",
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        to=["kimonesmuske@gmail.com"],
+    )
+    admin_email.attach_alternative(admin_html, "text/html")
+    admin_email.send()
+
 
 def register_view(request):
     if request.user.is_authenticated:
@@ -35,6 +76,12 @@ def register_view(request):
             org.status = RegistrationStatus.PENDING
             org.set_password(registration_form.cleaned_data["password"])
             org.save()
+
+            Thread(
+                target=send_registration_emails,
+                args=(org, request),
+                daemon=True
+            ).start()
 
             messages.success(
                 request,

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background: #fff;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .header {
+            background: #3498db;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .content {
+            padding: 25px;
+        }
+
+        .details {
+            background: #f8f9fa;
+            padding: 15px;
+            border-left: 4px solid #3498db;
+            margin: 20px 0;
+        }
+
+        .footer {
+            text-align: center;
+            background: #f1f1f1;
+            padding: 15px;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 12px 20px;
+            background: #3498db;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+
+        <div class="header">
+            <h2>FACILITY REGISTRATION SUBMITTED</h2>
+        </div>
+
+        <div class="content">
+
+            <p>Dear {{ organization.org_name }},</p>
+
+            <p>
+                Thank you for registering your organization on our platform.
+                Your submission has been received successfully.
+            </p>
+
+            <div class="details">
+
+                <h3>Organization Details</h3>
+
+                <p><strong>Organization:</strong> {{ organization.org_name }}</p>
+
+                <p>
+                    <strong>Status:</strong>
+                    <span style="color:#f39c12;font-weight:bold;">
+                        Pending Review
+                    </span>
+                </p>
+
+            </div>
+
+            <p>
+                Our team will review your organization shortly.
+                Once the review is complete, you will receive another email informing you whether your organization has been
+                approved.
+            </p>
+
+            <p style="text-align:center;">
+                <a href="/" class="button">Visit Platform</a>
+            </p>
+
+            <p>
+                Thank you for partnering with us.
+            </p>
+
+            <p>
+                Best Regards,<br>
+                <strong>Platform Team</strong>
+            </p>
+
+        </div>
+
+        <div class="footer">
+            © 2026 All Rights Reserved
+        </div>
+
+    </div>
+
+</body>
+
+</html>
